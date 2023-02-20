@@ -1,0 +1,12 @@
+# React
+build/
+node_modules/
+*.env
+*.log
+*.pem
+*.pid
+*.sock
+
+# General
+.DS_Store
+Thumbs.db
