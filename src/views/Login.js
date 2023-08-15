@@ -28,7 +28,7 @@ function Login() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://www.nomster.in/home'
+        redirectTo: '/home'
       }
     });
   };
