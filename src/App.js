@@ -7,6 +7,8 @@ import { indigo } from '@mui/material/colors';
 import Admin from './views/Admin.js';
 import Billing from './views/Billing.js';
 import mixpanel from 'mixpanel-browser';
+import Privacy from './views/Privacy.js';
+import Tos from './views/Tos.js';
 
 const MIXPANEL_TOKEN = '9937813cca9141bdb4adf8b6a5345d44'; // Replace with your Mixpanel project token
 
@@ -34,6 +36,8 @@ function App() {
         <Route path='/home' element={<Home />} />
         <Route path='/admin' element={<Admin />} />
         <Route path='/billing' element={<Billing />} />
+        <Route path='/privacy' element={<Privacy />} />
+        <Route path='/tos' element={<Tos />} />
       </Routes>
     </BrowserRouter>
 
