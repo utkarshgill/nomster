@@ -28,7 +28,7 @@ function Login() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'localhost:3000/home'
+        redirectTo: '/home'
       }
     });
   };
