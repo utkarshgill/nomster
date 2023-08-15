@@ -33,6 +33,7 @@ function App() {
     <BrowserRouter basename={process.env.PUBLIC_URL}>
       <Routes>
         <Route exact path='/' element={<Login />} />
+        <Route exact path='' element={<Navigate to="/" />} />
         <Route path='/home' element={<Home />} />
         <Route path='/admin' element={<Admin />} />
         <Route path='/billing' element={<Billing />} />
