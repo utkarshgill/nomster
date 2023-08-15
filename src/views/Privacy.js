@@ -2,7 +2,7 @@ import React from 'react';
 
 const Privacy = () => {
     return (
-        <div>
+        <div style={{ backgroundColor: '#fff', padding: '40px', margin: '20px', borderRadius: '28px' }}>
             <h1>Privacy Policy for Nomster</h1>
             <h2>Introduction</h2>
             <p>At Nomster, your privacy is paramount to us. We understand that your personal information is your own, and we're committed to protecting it. This Privacy Policy outlines our practices for collecting, using, and disclosing your information.</p>

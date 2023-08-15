@@ -2,7 +2,7 @@ import React from 'react';
 
 const Tos = () => {
     return (
-        <div>
+        <div style={{ backgroundColor: '#fff', padding: '40px', margin: '20px', borderRadius: '28px' }}>
             <h1>Terms of Service for Nomster</h1>
             <h2>Acceptance</h2>
             <p>By accessing or using Nomster, you agree to comply with these Terms. If you do not agree, please do not use our services.</p>
