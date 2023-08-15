@@ -1,0 +1,197 @@
+/* styles.css */
+/* Add your CSS styles here */
+
+.greeting {
+    width: 100%;
+    font-weight: bold;
+    font-size: 40px;
+    margin: 0;
+}
+
+.brand-logo-container {
+    display: flex;
+    background-color: white;
+    padding: 0 16px;
+    align-items: center;
+    gap: 12px;
+}
+
+h3 {
+    line-height: 0.9;
+    margin: 0;
+}
+
+.styled-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    padding: 0 20px;
+    max-width: 400px;
+}
+
+.secondary-button {
+    width: fit-content;
+    height: 44px;
+    font-size: 16px;
+    padding: 0 20px;
+    margin: 20px 0;
+    border: none;
+    border-radius: 100px;
+    background-color: #fff;
+    color: color;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.scanner {
+    cursor: pointer;
+    width: 100%;
+    height: 44px;
+    font-size: 16px;
+    padding: 0 20px;
+    margin: 20px;
+    border: none;
+    border-radius: 100px;
+    background-color: rgba($color: #000000, $alpha: .8);
+    color: white;
+    font-weight: bold;
+
+
+}
+
+.scanner-modal {
+    background-color: black;
+    position: absolute;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.navbar {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.billing-navbar {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+}
+
+.bill-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 12px;
+    height: 44px;
+    border: none;
+    margin-bottom: 20px;
+    outline: none;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.profile-pic {
+    width: 48px;
+    height: 48px;
+    border-radius: 100px;
+}
+
+
+.horizontal-scroll-container {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    gap: 12px;
+    padding: 12px;
+    margin-bottom: 24px;
+    background-color: rgba($color: #fff, $alpha: 0.2);
+    border-radius: 40px;
+    overflow-x: scroll;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* Internet Explorer 10+ */
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+    display: none;
+    /* WebKit (Chrome, Safari, etc.) */
+}
+
+*::-webkit-scrollbar {
+    display: none;
+}
+
+
+.hero-card {
+    min-width: 280px;
+    height: 480px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    background-color: #fff;
+
+    margin: 0 0;
+    border-radius: 28px;
+}
+
+.wallet-balance {
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+}
+
+.list {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    border-radius: 28px;
+}
+
+p {
+    margin: 0;
+}
+
+.list-item {
+    width: 100%;
+    cursor: pointer;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.qr-code {
+    width: 75% !important;
+    height: auto !important;
+    aspect-ratio: 1 !important;
+    border-radius: 12px;
+    // background-color: #fff;
+    // border-radius: 12px;
+    // box-shadow: 1px;
+    // display: flex;
+    // justify-content: center;
+    // align-items: center;
+}
+
+.offer-card {
+    width: 100%;
+    cursor: pointer;
+}
