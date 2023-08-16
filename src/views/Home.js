@@ -235,7 +235,7 @@ function Home() {
     };
     const handleShareOffer = () => {
         const referralUrl = `https://nomster.in/?i=${user.id}`; // Replace with your actual referral URL
-        const shareMessage = `🎁 ${user.user_metadata.full_name} sent you a gift. 👉 ${referralUrl}`;
+        const shareMessage = `Can't espresso how awesome you are, here's a *FREE* coffee for you 👉 ${referralUrl}`;
 
         mixpanel.track('tap share offer', { user_id: user.id });
 
