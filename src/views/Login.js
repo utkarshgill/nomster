@@ -56,7 +56,13 @@ function Login() {
             storedInviteCode ? mixpanel.track('sign up', { type: 'invite' }) : mixpanel.track('sign up')
             // Create a record in Supabase users table
             await supabase.from('users').insert([
-              { user_id: user?.id, full_name: user?.full_name, avatar_url: user?.avatar_url, email: user?.email, invited_by: storedInviteCode, is_activated: false },
+              {
+                user_id: user?.id,
+                full_name: user?.user_metadata?.full_name,
+                avatar_url: user?.user_metadata?.avatar_url,
+                email: user?.email, invited_by: storedInviteCode,
+                is_activated: false
+              },
             ]);
           }
           mixpanel.track('sign in');

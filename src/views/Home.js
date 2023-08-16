@@ -80,14 +80,15 @@ function Home() {
 
         const { data, error } = await supabase
             .from('users')
-            .select('*')
+            .select('user_id, invited_by, is_activated, created_at, full_name, avatar_url')
             .eq('invited_by', userId)
-            .order('created_at', { ascending: false });;
+            .order('created_at', { ascending: false });
 
         if (data) {
             setInviteCards(data.map(invite => ({
-                userId: invite.user_id, // Include the 'id' field here
-                offer: svgData.offer,
+                userId: invite.user_id,
+                fullName: invite.full_name,
+                avatarUrl: invite.avatar_url,
                 isActivated: invite.is_activated,
                 createdAt: invite.created_at
             })));
@@ -96,7 +97,6 @@ function Home() {
             console.error('Error fetching invitations:', error);
         }
     };
-
 
 
 
@@ -113,8 +113,18 @@ function Home() {
         }
     }, [user]);
 
+
+    const removeInviteCard = (invitedUserId) => {
+        setInviteCards((currentInviteCards) =>
+            currentInviteCards.filter((card) => card.userId !== invitedUserId)
+        );
+    };
+
     const handleTransactionUpdated = (event) => {
         console.log('Transaction updated:', event);
+        if (event.new && event.new.invited_user_id && (event.eventType === 'INSERT' || event.eventType === 'UPDATE')) {
+            removeInviteCard(event.new.invited_user_id); // Remove invite card for this invited user
+        }
         if (event.new && (event.eventType === 'INSERT' || event.eventType === 'UPDATE')) {
             fetchTransactions(); // Re-fetch transactions to reflect changes
         }
@@ -279,7 +289,9 @@ function Home() {
 
                 {inviteCards.map((card, index) => (
                     <div key={index} className="hero-card" style={{ filter: card.isActivated ? 'none' : 'grayscale(100%)' }}>
-                        <div dangerouslySetInnerHTML={{ __html: card.offer }} />
+                        <img src={card.avatarUrl} alt={card.fullName} />
+                        <h2>{card.fullName}</h2>
+                        <QRCodeCanvas className="qr-code" size={720} value={`${uid}-${card.userId}`} style={{ filter: card.isActivated ? 'none' : 'blur(5px)' }} includeMargin />
                     </div>
                 ))}
 
