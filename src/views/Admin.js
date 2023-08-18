@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../App';
 import { useNavigate } from 'react-router-dom';
+import svgData from './svgData';
 
 import { Scanner } from '@codesaursx/react-scanner';
 
@@ -40,7 +41,7 @@ function Admin() {
         try {
             const { data: usersData, error } = await supabase
                 .from('users')
-                .select('user_id, full_name, avatar_url');
+                .select('*');
 
             if (usersData) {
                 const usersMap = {};
@@ -85,13 +86,33 @@ function Admin() {
         }
     }
     const handleListItemNavigation = (transaction) => {
-        navigate(`/billing?userId=${transaction.user_id}`);
+        navigate(`/billing?offerId=${transaction.offer_id}`);
     }
     return (
-        <div className='styled-container'>
+        <div className='styled-container'><div className="styled-container"><div className='navbar'><div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
+        </div> </div>
             {/* Button to toggle the visibility of the scanner */}
+            {isScannerVisible && (
+                <div className="scanner-modal">
+                    <div className='bounding-box' />
+
+                    <Scanner
+                        width="100%" // Make it full screen
+                        height="100%" // Make it full screen
+                        onUpdate={(e, data) => {
+                            if (data) {
+                                console.log(data);
+                                setCode(data.getText());
+                                toggleScanner();
+                                const offerId = data.getText();
+                                navigate(`/billing?offerId=${offerId}`);
+                            }
+                        }}
+                    />
+                </div>
+            )}
             <button className='scanner' onClick={toggleScanner}>
-                Scan QR
+                {!isScannerVisible ? 'Open camera' : 'Close'}
             </button>
             <p>{code}</p>
             <ul className='list'>
@@ -118,26 +139,7 @@ function Admin() {
             </ul>
 
             {/* Conditionally render the scanner modal based on visibility */}
-            {isScannerVisible && (
-                <div className="scanner-modal">
-                    <button className="secondary-button" onClick={toggleScanner}>
-                        Close
-                    </button>
-                    <Scanner
-                        width="100%" // Make it full screen
-                        height="100%" // Make it full screen
-                        onUpdate={(e, data) => {
-                            if (data) {
-                                console.log(data);
-                                setCode(data.getText());
-                                toggleScanner();
-                                const userId = data.getText();
-                                navigate(`/billing?userId=${userId}`);
-                            }
-                        }}
-                    />
-                </div>
-            )}
+
         </div>
     );
 }

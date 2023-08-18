@@ -1,315 +1,278 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../App';
 import { useNavigate } from 'react-router-dom';
-import QRCodeCanvas from 'qrcode.react'; import mixpanel from 'mixpanel-browser';
-
-
-
+import QRCodeCanvas from 'qrcode.react';
+import mixpanel from 'mixpanel-browser';
 import svgData from './svgData';
-import './styles.scss'; // Import the CSS file
-
+import './styles.scss';
+import { useStatus } from '../models/GlobalState';
 
 
 function Home() {
     const navigate = useNavigate();
-    const offerSVG = svgData.offer;
-    const nomsterSVG = svgData.nomster;
-    const tcwLogo = svgData.tcwLogo;
+    const { offer: offerSVG, nomster: nomsterSVG, tcwLogo } = svgData;
     const [user, setUser] = useState(null);
-    const [uid, setUid] = useState('');
-    const [balance, setBalance] = useState(null);
     const [transactions, setTransactions] = useState([]);
-    const [inviteCards, setInviteCards] = useState([]);
+    const [offerCards, setOfferCards] = useState([]);
+
+    const { status } = useStatus();
+
+    useEffect(() => {
+        if (status === 'completed') {
+            fetchOfferCards(user.user_id);
+        }
+    }, [user, status]);
 
     const handleCarouselScroll = () => {
-        mixpanel.track('scroll offer', { user_id: user.id });
+        if (user) {
+            mixpanel.track('scroll offer', { user_id: user.user_id });
+            document.querySelector('.horizontal-scroll-container').removeEventListener('scroll', handleCarouselScroll);
 
-        // Remove the scroll listener after the first scroll event
-        const scrollContainer = document.querySelector('.horizontal-scroll-container');
-        scrollContainer.removeEventListener('scroll', handleCarouselScroll);
+        }
     };
-
-
 
     useEffect(() => {
         const scrollContainer = document.querySelector('.horizontal-scroll-container');
-
-        // Attach the scroll listener
         scrollContainer.addEventListener('scroll', handleCarouselScroll);
 
-        // Detach the scroll listener when the component unmounts
         return () => {
             scrollContainer.removeEventListener('scroll', handleCarouselScroll);
         };
-    }, [user]); // The dependency on the 'user' ensures that the effect runs when the user object changes
+    }, []);
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            console.log('Fetching user...'); // Debug log before fetching user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('user_id', user.id).single();
+                console.log('User fetched:', userData); // Debug log for fetched user
+                setUser(userData);
+            } else {
+                console.log('No user found, redirecting...'); // Debug log if no user is found
+                navigate('/');
+            }
+        };
+        fetchUser();
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            console.log('User state updated, creating subscriptions:', user); // Debug log for updated user state
+
+            fetchOfferCards(user.user_id);
+            fetchTransactions(user.user_id);
+        }
+    }, [user]);
+
+
+    useEffect(() => {
+        if (user) {
+            console.log('Creating subscription for user:', user.user_id); // Debug log for subscription creation
+
+            // const transactionSubscription = createSubscription('transactions', 'public', user.id, handleTransactionUpdated);
+            // const offerSubscription = createSubscription('offers', 'public', user.id, handleOfferUpdated);
+
+
+            const subscription = supabase
+                .channel('any')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, handleTransactionUpdated)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, handleOfferUpdated)
+                .subscribe()
+
+            console.log('Subscription created for user:', user.user_id);
+
+
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
+    }, [user]);
+
 
 
 
     const handleSignOut = async () => {
-        try {
-            await supabase.auth.signOut();
-            navigate('/');
-            setUser(null);
-        } catch (error) {
-            console.error('Error signing out:', error);
-        }
-    };
-
-    useEffect(() => {
-        const fetchSession = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (user) {
-                setUser(user);
-                setUid(user.id);
-                fetchBalance(user.id);
-                fetchInviteCards(user.id); // Fetch invitations here
-            } else {
-                console.error('Error fetching session: User object is not defined');
-                navigate('/'); // Redirect to the root path if no user is logged in
-            }
-        };
-        fetchSession();
-    }, []);
-
-    const fetchInviteCards = async (userId) => {
-        if (!userId) {
-            console.warn('User ID is not defined. Skipping fetching of invitations.');
-            return;
-        }
-
-        const { data, error } = await supabase
-            .from('users')
-            .select('user_id, invited_by, is_activated, created_at, full_name, avatar_url')
-            .eq('invited_by', userId)
-            .order('created_at', { ascending: false });
-
-        if (data) {
-            setInviteCards(data.map(invite => ({
-                userId: invite.user_id,
-                fullName: invite.full_name,
-                avatarUrl: invite.avatar_url,
-                isActivated: invite.is_activated,
-                createdAt: invite.created_at
-            })));
-        }
-        if (error) {
-            console.error('Error fetching invitations:', error);
-        }
+        await supabase.auth.signOut();
+        navigate('/');
+        setUser(null);
     };
 
 
 
-    useEffect(() => {
-        if (user) {
-            const subscription = supabase
-                .channel('notifications')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, handleTransactionUpdated)
-                .subscribe();
-
-            return () => {
-                subscription.unsubscribe();
-            };
-        }
-    }, [user]);
-
-
-    const removeInviteCard = (invitedUserId) => {
-        setInviteCards((currentInviteCards) =>
-            currentInviteCards.filter((card) => card.userId !== invitedUserId)
-        );
+    const fetchTransactions = async (userId) => {
+        const { data, error } = await supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        if (data) setTransactions(data);
+        if (error) console.error('Error fetching transactions:', error);
     };
 
     const handleTransactionUpdated = (event) => {
-        console.log('Transaction updated:', event);
-        if (event.new && event.new.invited_user_id && (event.eventType === 'INSERT' || event.eventType === 'UPDATE')) {
-            removeInviteCard(event.new.invited_user_id); // Remove invite card for this invited user
-        }
-        if (event.new && (event.eventType === 'INSERT' || event.eventType === 'UPDATE')) {
-            fetchTransactions(); // Re-fetch transactions to reflect changes
+        console.log('new');
+        if (event.new && ['INSERT', 'UPDATE'].includes(event.eventType)) fetchTransactions(user.user_id);
+    };
+
+    const handleOfferUpdated = async (event) => {
+        console.log('Handling offer updated:', event); // Debug log to see what the event object contains
+
+        if (event.eventType === 'INSERT') {
+            fetchOfferCards(user.user_id);
+            const { new: newOffer } = event;
+            console.log('New offer:', newOffer); // Debug log for the new offer
+
+            if (newOffer.referral_uid) {
+
+                const { data: inviterDetails } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('user_id', user.invited_by)
+                    .single();
+
+                console.log(inviterDetails.full_name)
+                newOffer.inviter = inviterDetails;
+
+
+                console.log('New offer with inviter:', newOffer); // Debug log for the new offer with inviter details
+            }
+
+            setOfferCards(currentOfferCards => {
+                console.log('Current offer cards:', currentOfferCards); // Debug log for the current offer cards before updating
+                const updatedOfferCards = [...currentOfferCards, newOffer];
+                console.log('Updated offer cards:', updatedOfferCards); // Debug log for the updated offer cards after adding the new offer
+                return updatedOfferCards;
+            });
+        } else if (event.eventType === 'UPDATE') {
+            fetchOfferCards(user.user_id);
         }
     };
 
+    const fetchOfferCards = async (userId) => {
+        const { data, error } = await supabase
+            .from('offers')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
 
 
+        if (data) {
+            const offersWithInviterDetails = await Promise.all(
+                data.map(async offer => {
+                    if (offer.referral_uid) {
 
-
-
-
-
-    async function fetchTransactions() {
-        if (user) {
-            const { data, error } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
-            if (data) {
-                setTransactions(data);
-            }
-            if (error) {
-                console.error('Error fetching transactions:', error);
-            }
-        }
-    }
-
-    useEffect(() => {
-        if (user) {
-            fetchTransactions();
-        }
-    }, [user]);
-
-
-    const fetchBalance = async (userId) => {
-        if (!userId) {
-            console.error('Cannot fetch balance without user ID');
-            return;
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('users')
-                .select('balance')
-                .eq('user_id', userId)
-                .single();
-            if (data && data.balance !== null) {
-                setBalance(data.balance);
-            } else {
-                console.error('Error fetching balance:', error || 'Balance data is not defined');
-            }
-        } catch (error) {
-            console.error('Error fetching balance:', error);
-        }
-    };
-
-
-    useEffect(() => {
-        if (user) {
-            const subscription = supabase
-                .channel('any')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, handleRecordUpdated)
-                .subscribe();
-            return () => {
-                subscription.unsubscribe();
-            };
-        }
-    }, [user]);
-
-
-    const handleRecordUpdated = (event) => {
-        console.log('Record updated:', event);
-
-        // Update the balance when the user's data changes
-        if (event && event.new && event.new.balance) {
-            setBalance(event.new.balance);
-        }
-
-        // Check if the change is related to invitations
-        if (event.new && event.new.invited_by === user.id) {
-            if (event.eventType === 'INSERT') {
-                console.log('Invite inserted');
-                setInviteCards(currentInviteCards => [
-                    ...currentInviteCards,
-                    {
-                        userId: event.new.user_id, // Change to 'user_id'
-                        offer: svgData.offer,
-                        isActivated: event.new.is_activated
+                        console.log('here');
+                        const { data: inviter, error } = await supabase
+                            .from('users')
+                            .select('*')
+                            .eq('user_id', user.invited_by)
+                            .single()
+                        offer.inviter = inviter;
                     }
-                ]);
-            } else if (event.eventType === 'UPDATE') {
-                console.log('Invite updated');
-                setInviteCards(currentInviteCards => {
-                    const updatedCards = [...currentInviteCards];
-                    const cardIndex = updatedCards.findIndex(card => card.userId === event.new.user_id); // Change to 'user_id'
-                    if (cardIndex !== -1) {
-                        updatedCards[cardIndex].isActivated = event.new.is_activated;
-                    }
-                    return updatedCards;
-                });
-            }
+                    return offer;
+                })
+            );
+            setOfferCards(offersWithInviterDetails);
+        } else {
+            setOfferCards([]);
+        }
+
+        if (error) {
+            console.error('Error fetching offers:', error);
         }
     };
+
+
+    const updateOffers = (event) => {
+        const { new: updatedOffer, eventType } = event;
+        setOfferCards(currentOfferCards => {
+            if (eventType === 'INSERT') return [...currentOfferCards, updatedOffer];
+            if (eventType === 'UPDATE') return currentOfferCards.map(card => (card.id === updatedOffer.id ? { ...updatedOffer } : card));
+            return [...currentOfferCards];
+        });
+    };
+
 
     const formatDate = (dateString) => {
         const options = { day: 'numeric', month: 'short' };
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
-    const renderTransactionAmount = (transaction) => {
-        const formattedAmount = Math.abs(transaction.amount).toFixed(2);
-        return (
-            <span style={{ color: transaction.amount < 0 ? 'grey' : 'green', fontWeight: 'bold' }}>
-                {transaction.amount < 0 ? `- ₹${formattedAmount}` : `+ ₹${formattedAmount}`}
-            </span>
-        );
-    };
+    const renderTransactionAmount = (transaction) => (
+        <span style={{ color: transaction.amount < 0 ? 'grey' : 'green', fontWeight: 'bold' }}>
+            {transaction.amount < 0 ? `- ₹${Math.abs(transaction.amount).toFixed(2)}` : `+ ₹${Math.abs(transaction.amount).toFixed(2)}`}
+        </span>
+    );
+
     const handleShareOffer = () => {
-        const referralUrl = `https://nomster.in/?i=${user.id}`; // Replace with your actual referral URL
+        const referralUrl = `https://nomster.in/?i=${user.user_id}&o=invite`;
         const shareMessage = `Can't espresso how awesome you are, here's a *FREE* coffee for you 👉 ${referralUrl}`;
 
-        mixpanel.track('tap share offer', { user_id: user.id });
-
+        mixpanel.track('tap share offer', { user_id: user.user_id });
         if (navigator.share) {
-            navigator.share({
-                title: 'Invite Friends',
-                text: shareMessage,
-                url: referralUrl,
-            })
+            navigator.share({ title: 'Invite Friends', text: shareMessage, url: referralUrl })
                 .then(() => {
                     alert('Shared successfully!');
-                    mixpanel.track('share offer successful', { user_id: user.id });
+                    mixpanel.track('share offer successful', { user_id: user.user_id });
                 })
-                .catch((error) => console.error('Error sharing:', error));
-        } else {
-            // Fallback for browsers that do not support Web Share API
-            console.log('Web Share API not supported');
-            // You can provide an alternative sharing method here, such as copying the message to clipboard
+                .catch(error => console.error('Error sharing:', error));
         }
     };
 
-    return (
-        <div className="styled-container">
+    const renderCard = (card, index) => {
+        if (card.is_used) return null;
 
-            <div className='navbar'><div dangerouslySetInnerHTML={{ __html: nomsterSVG }} />
-            </div>
+        const backgroundImage = `url('https://source.unsplash.com/random?sig=${index}')`;
 
-            {/* <p className='greeting'>
-                {user ? `Hi ${user.user_metadata.full_name}! 👋` : ''}
-            </p><p className='greeting' style={{ color: '#87B300' }}>
-                {`You have ${balance !== null ? `₹${balance.toFixed(2)}` : ''}`}
-
-            </p> */}
-
-            <div className="horizontal-scroll-container">
-                <div className="hero-card">
-                    <h1>{balance !== null ? `₹${balance.toFixed(2)}` : 'Loading balance...'}</h1>
-                    <QRCodeCanvas className="qr-code" size={720} value={uid} includeMargin />
-                    <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
-                </div>
-
-                {inviteCards.map((card, index) => (
-                    <div key={index} className="hero-card" style={{ filter: card.isActivated ? 'none' : 'grayscale(100%)' }}>
-                        <img src={card.avatarUrl} alt={card.fullName} />
-                        <h2>{card.fullName}</h2>
-                        <QRCodeCanvas className="qr-code" size={720} value={`${uid}-${card.userId}`} style={{ filter: card.isActivated ? 'none' : 'blur(5px)' }} includeMargin />
+        switch (card.type) {
+            case 'loyal':
+                return (
+                    <div className="hero-card" key={index} style={{ backgroundImage }}>
+                        <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
+                        <h1>{card.value !== null ? `₹${card.value.toFixed(2)}` : ''}</h1>
+                        <QRCodeCanvas className="qr-code" size={720} value={card.id} includeMargin />
                     </div>
-                ))}
+                );
+            case 'invite':
+                return (
+                    <div key={index} className="hero-card" style={{ backgroundImage }}>
+                        <img src={card.inviter?.avatar_url} alt="" />
+                        <p>{card.inviter ? card.inviter.full_name : ''}</p>
+                        <p>{card.type}</p>
+                        <QRCodeCanvas className="qr-code" size={720} value={card.id} includeMargin />
+                    </div>
+                );
+            case 'refer':
+                return (
+                    <div key={index} className="hero-card" style={{ backgroundImage }}>
+                        <img src={card.image} alt="" />
+                        <p>{card.type}</p>
+                        <QRCodeCanvas className="qr-code" size={720} value={card.id} style={{ filter: card.is_unlocked ? 'none' : 'blur(10px)' }} includeMargin />
+                    </div>
+                );
+            default:
+                return <div key={index} className="hero-card" style={{ backgroundImage }}>Error</div>;
+        }
+    };
 
 
+    return (
+        <div className="styled-container"><div className='navbar'><div dangerouslySetInnerHTML={{ __html: nomsterSVG }} />
+        </div>
+            <div className="horizontal-scroll-container">
+                {offerCards.map(renderCard)}
                 <div className="hero-card" onClick={handleShareOffer}>
                     <div dangerouslySetInnerHTML={{ __html: offerSVG }} />
                 </div>
             </div>
-
-
             <ul className='list'>
                 {transactions.map((transaction) => (
                     <li key={transaction.id} style={{ listStyleType: 'none' }}>
                         <div className='list-item'  >
                             <div className='wallet-balance'>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                    <p style={{ fontWeight: 'bold', fontSize: '24px', backgroundColor: '#eee', height: '32px', width: '32px', textAlign: 'center', borderRadius: '100px', padding: '2px' }}> {transaction.amount > 0 ? '₹' : '✓'}</p>
-                                    <div><p>{transaction.amount < 0 ? 'Redeemed' : 'Earned'}</p> <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ backgroundColor: '#eee', borderRadius: '100px' }}><p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}> {transaction.type == 'earn' ? '↓' : transaction.type == 'refer' ? '🥤' : transaction.type == 'invite' ? '🥤' : '↑'}</p>
+                                    </div> <div><p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{transaction.type}</p> <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
                                     </div>
                                 </div>
                                 <p>{renderTransactionAmount(transaction)}</p></div>
@@ -320,8 +283,10 @@ function Home() {
                 ))}
             </ul>
             <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
+
         </div >
     );
 }
 
 export default Home;
+
