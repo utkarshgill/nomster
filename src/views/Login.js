@@ -99,6 +99,7 @@ function Login() {
       .select('*')
       .eq('user_id', user?.id);
 
+    mixpanel.identify(user?.id);
 
 
     if (!data?.length) {
@@ -211,7 +212,6 @@ function Login() {
       async (event, session) => {
         if (event === 'SIGNED_IN') {
           const user = session?.user;
-          mixpanel.identify(user?.id);
           // Retrieve the invite code from session storage
           const storedInviteCode = sessionStorage.getItem('invite_code');
           const storedOfferType = sessionStorage.getItem('offer_type');

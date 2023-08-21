@@ -82,19 +82,16 @@ function Home() {
         if (user) {
             console.log('Creating subscription for user:', user.user_id); // Debug log for subscription creation
 
-            // const transactionSubscription = createSubscription('transactions', 'public', user.id, handleTransactionUpdated);
-            // const offerSubscription = createSubscription('offers', 'public', user.id, handleOfferUpdated);
-
+            const filterString = `user_id=eq.${user.user_id}`;
 
             const subscription = supabase
                 .channel('any')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, handleTransactionUpdated)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, handleOfferUpdated)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, handleUserUpdated)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: filterString }, handleTransactionUpdated)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'offers', filter: filterString }, handleOfferUpdated)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: filterString }, handleUserUpdated)
                 .subscribe()
 
             console.log('Subscription created for user:', user.user_id);
-
 
             return () => {
                 subscription.unsubscribe();
@@ -102,9 +99,10 @@ function Home() {
         }
     }, [user]);
 
+
     const handleUserUpdated = (event) => {
         if (event.new) {
-            setUser(event.new);
+            setUser(event.new);//
         }
     }
 
