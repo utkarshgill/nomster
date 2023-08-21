@@ -340,11 +340,14 @@ function Home() {
             bill_value: parseFloat(bill).toFixed(2),
             amount: parseFloat(discountFromBalance).toFixed(2),
             type: 'spend',
+            offer_id: selectedOffer ? selectedOffer.id : undefined,
+            ref_offer_id: selectedOffer && selectedOffer.type == 'invite' ? selectedOffer.referral_uid : ''
 
         };
 
         // If offer was used
         if (selectedOffer) {
+
             transaction.type = selectedOffer.type;
             transaction.amount = selectedOffer.value;
             // Update the offer to 'is_used' = true

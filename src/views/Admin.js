@@ -141,9 +141,14 @@ function Admin() {
                 .eq('user_id', userId).single();
 
             await supabase
-                .from('transactions')
+                .from('offers')
+                .upsert({ is_used: true })
+                .eq('id', transaction.offer_id)
+
+            await supabase
+                .from('offers')
                 .upsert({ is_unlocked: true })
-                .eq('offer_id', transaction.referral_id)
+                .eq('id', transaction.ref_offer_id)
         }
 
         // Fetch updated transactions
