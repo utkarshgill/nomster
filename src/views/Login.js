@@ -6,14 +6,46 @@ import svgData from './svgData';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStatus } from '../models/GlobalState';
 
+
+
+
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const inviteCode = new URLSearchParams(location.search).get('i');
-  const offerType = new URLSearchParams(location.search).get('o'); // Extracting offer type from URL
-  const [offerImage, setOfferImage] = useState(null); // State to store offer image
+  const offerType = new URLSearchParams(location.search).get('o');
+  const [offerImage, setOfferImage] = useState(null);
+  const [inviterName, setInviterName] = useState(null);
+  const [inviterImage, setInviterImage] = useState(null);
   const { setStatus } = useStatus();
 
+  useEffect(() => {
+    (async () => {
+      if (inviteCode) {
+        const { data: inviterData } = await supabase
+          .from('users')
+          .select('full_name, avatar_url')
+          .eq('user_id', inviteCode).single();
+
+        if (inviterData) {
+          setInviterName(inviterData.full_name);
+          setInviterImage(inviterData.avatar_url);
+          if (offerType) {
+            const { data } = await supabase
+              .from('offer_types')
+              .select('image')
+              .eq('type', offerType).single();
+
+            if (data) {
+              setOfferImage(data.image);
+            }
+          }
+        } else {
+          navigate('/');
+        }
+      }
+    })();
+  }, [offerType, inviteCode, navigate]);
   useEffect(() => {
     (async () => {
       if (offerType) {
@@ -47,6 +79,10 @@ function Login() {
       }
 
     }
+    // let { user, error } = await supabase.auth.signInWithOtp({
+    //   phone: '+918267067782',
+    // });
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -74,16 +110,11 @@ function Login() {
           full_name: user?.user_metadata?.full_name,
           avatar_url: user?.user_metadata?.avatar_url,
           email: user?.email, invited_by: storedInviteCode,
-          is_activated: false
+          is_activated: false,
+          balance: 0,
         },
       ]);
-      await supabase.from('offers').insert([{
 
-        user_id: user?.id,
-        type: 'loyal',
-        value: 10,
-
-      }]);
 
       // If invite code exists, create an offer with type INVITE and referral_uid = inviteCode
       if (storedInviteCode) {
@@ -102,7 +133,11 @@ function Login() {
               {
                 user_id: storedInviteCode,
                 type: 'refer',
-                is_unlocked: false
+                is_unlocked: false,
+                referral_uid: user.id,
+                value: offerData.value,
+                image: offerData.image,
+                name: offerData.name
               }
             ]).select().single();
             await supabase.from('offers').insert([
@@ -110,6 +145,9 @@ function Login() {
                 user_id: user?.id,
                 type: offerData.type,
                 referral_uid: data.id,
+                value: offerData.value,
+                image: offerData.image,
+                name: offerData.name
               }
             ]);
           }
@@ -120,6 +158,9 @@ function Login() {
                 user_id: user?.id,
                 type: offerData.type,
                 referral_uid: storedInviteCode,
+                value: offerData.value,
+                image: offerData.image,
+                name: offerData.name
               }
             ]);
           }
@@ -193,13 +234,23 @@ function Login() {
 
   return (
     <div className='styled-container'>
-      <div className='navbar'>
-        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
-      </div>
-      {offerImage ? <div className='hero-card' style={{ backgroundImage: `url(${offerImage})` }}>
 
-      </div> : <div />}
-      <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
+      {inviterName && inviterImage ? <div className='navbar'>
+        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
+      </div> : ''}
+      <div className='bill-box' style={{ height: '280px', alignItems: 'center', border: 'none' }}>
+
+        {inviterName && inviterImage ? (
+          <div className='stack-h-fill' style={{ gap: '12px' }}>
+            <img style={{ borderRadius: '100px', width: '32px' }} src={inviterImage} alt={inviterName} />
+            <span>{`${inviterName} sent you a drink`}</span>
+          </div>
+        ) : <div className='navbar'>
+          <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
+        </div>}
+        {offerImage && inviterName ? <img style={{ width: '100%' }} src={offerImage} /> : <div />}
+        <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
+      </div>
     </div>
   );
 }

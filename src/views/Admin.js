@@ -1,41 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../App';
 import { useNavigate } from 'react-router-dom';
-import svgData from './svgData';
-
-import { Scanner } from '@codesaursx/react-scanner';
+import QRCode from 'qrcode.react';
 
 function Admin() {
-    const [code, setCode] = useState('');
-    const [isScannerVisible, setScannerVisible] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const [usersMap, setUsersMap] = useState({});
+    const [number, setNumber] = useState('');
     const navigate = useNavigate();
 
-    const specificUserId = '4e24e5ce-23ce-40d2-bf93-f12273e1b746'; // Replace with the actual user ID you want to allow
-
-    // Function to toggle the visibility of the scanner modal
-    const toggleScanner = () => {
-        setScannerVisible(!isScannerVisible);
-    };
+    const specificUserId = '4e24e5ce-23ce-40d2-bf93-f12273e1b746';
 
     useEffect(() => {
-        // Check user authentication status
-        const checkUser = async () => {
-            try {
-                const { data, error } = await supabase.auth.getUser();
-                console.log(data.user.id);
-                if (!data.user || data.user.id !== specificUserId) {
-                    navigate('/'); // Redirect to a different page if not authorized
-                }
-            } catch (error) {
-                console.error("Error fetching user data:", error);
-            }
-        };
         checkUser();
         fetchTransactions();
         fetchUsers();
+
+        const subscription = supabase
+            .channel('any')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchTransactions)
+            .subscribe()
+
+
+
+        return () => subscription.unsubscribe();
     }, []);
+
+
+
+    async function checkUser() {
+        try {
+            const { data, error } = await supabase.auth.getUser();
+            if (!data || data.user.id !== specificUserId) {
+                navigate('/');
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        }
+    };
 
     async function fetchUsers() {
         try {
@@ -77,7 +79,9 @@ function Admin() {
             .from('transactions')
             .select('*')
             .eq('brand_id', specificUserId)
-            .order('created_at', { ascending: false });
+            .in('type', ['spend', 'invite', 'refer'])
+            .order('created_at', { ascending: false })
+
         if (data) {
             setTransactions(data);
         }
@@ -85,61 +89,136 @@ function Admin() {
             console.error('Error fetching transactions:', error);
         }
     }
+
     const handleListItemNavigation = (transaction) => {
         navigate(`/billing?offerId=${transaction.offer_id}`);
     }
-    return (
-        <div className='styled-container'><div className="styled-container"><div className='navbar'><div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
-        </div> </div>
-            {/* Button to toggle the visibility of the scanner */}
-            {isScannerVisible && (
-                <div className="scanner-modal">
-                    <div className='bounding-box' />
 
-                    <Scanner
-                        width="100%" // Make it full screen
-                        height="100%" // Make it full screen
-                        onUpdate={(e, data) => {
-                            if (data) {
-                                console.log(data);
-                                setCode(data.getText());
-                                toggleScanner();
-                                const offerId = data.getText();
-                                navigate(`/billing?offerId=${offerId}`);
-                            }
-                        }}
-                    />
-                </div>
-            )}
-            <button className='scanner' onClick={toggleScanner}>
-                {!isScannerVisible ? 'Open camera' : 'Close'}
-            </button>
-            <p>{code}</p>
+    async function handleConfirm(transaction) {
+        console.log("Transaction ID:", transaction.id);
+        const transactionId = transaction.id;
+        const finalBill = transaction.bill_value - transaction.amount;
+
+        // Update the transaction with is_confirmed = true
+        const updateResponse = await supabase
+            .from('transactions')
+            .update({ is_confirmed: true })
+            .eq('id', transactionId);
+
+        console.log("Update Response:", updateResponse);
+
+        if (updateResponse.error) {
+            console.error("Error updating offer:", updateResponse.error);
+            return; // Handle error appropriately
+        }
+
+        if (updateResponse.data === null) {
+            console.warn("No matching transaction found to update. Check the transaction ID.");
+        }
+        // If Final bill is not 0, add another transaction with type=earn, and amount = final bill * 0.2, is_confirmed = true
+        if (finalBill !== 0) {
+            await supabase
+                .from('transactions')
+                .insert([
+                    {
+                        user_id: transaction.user_id,
+                        type: 'earn',
+                        amount: (finalBill * 0.1).toFixed(2),
+                        is_confirmed: true
+                    },
+                ]);
+            const newBal = (finalBill * 0.1);
+            const { data, error } = await supabase
+                .rpc('update_balance', { uid: transaction.user_id, change: newBal });;
+        }
+
+        // If the transaction type is invite, then set the user to is_activated in users table
+        if (transaction.type === 'invite') {
+            const userId = transaction.user_id;
+            await supabase
+                .from('users')
+                .upsert({ is_activated: true })
+                .eq('user_id', userId).single();
+
+            await supabase
+                .from('transactions')
+                .upsert({ is_unlocked: true })
+                .eq('offer_id', transaction.referral_id)
+        }
+
+        // Fetch updated transactions
+        fetchTransactions();
+    };
+
+
+
+    function BillBox(transaction) {
+        return (<div className='bill-box'>
+            <div className='wallet-balance'>
+                <h2>Total Bill</h2>
+                <h2>₹{parseFloat(transaction.bill_value).toFixed(2)}</h2>
+            </div>
+            {transaction.type === 'spend' && <div className='wallet-balance'><p>Discount from balance</p><p>-₹{transaction.amount.toFixed(2)}</p></div>}
+            {transaction.type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type}`}</p></div>}
+            {transaction.type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type}`}</p></div>}
+
+            <div className='wallet-balance'>
+                <h1>Final Bill</h1>
+                <h1>₹{(transaction.bill_value - transaction.amount).toFixed(2)}</h1>
+            </div>
+
+            <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>   <button className='secondary-button' >Cancel</button>
+
+                <button className='scanner' onClick={() => handleConfirm(transaction)} >Confirm</button>
+
+            </div>
+
+        </div>);
+
+    };
+
+
+
+    return (
+        <div className='styled-container'>
+            <div className='navbar'>
+                {/* Add additional content if needed */}
+            </div>
+
+            <div className='hero-card'>
+                <QRCode value={number} />
+            </div>
+            <input className='bill-input' placeholder='Enter bill amount' type="number" value={number} onChange={e => setNumber(e.target.value)} />
+
             <ul className='list'>
                 {transactions.map((transaction) => (
                     <li key={transaction.id} style={{ listStyleType: 'none' }}>
-                        <div className='list-item' onClick={() => handleListItemNavigation(transaction)}>
+                        {!transaction.is_confirmed ? BillBox(transaction) : <div className='list-item' >
                             <div className='wallet-balance'>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                     {usersMap[transaction.user_id] && (
                                         <>
-                                            <img className='profile-pic' src={usersMap[transaction.user_id].avatar_url} alt={usersMap[transaction.user_id].full_name} />
-                                            <div>
-                                                <p>{usersMap[transaction.user_id].full_name}{transaction.amount < 0 ? ' redeemed' : ' earned'}</p>
+                                            <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
+                                                <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
+                                                    {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
+                                            </div> <div>
+                                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name + ` (${transaction.type})`}</p>
                                                 <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
                                             </div>
                                         </>
                                     )}
                                 </div>
-                                <p>{renderTransactionAmount(transaction)}</p>
+                                <div style={{ textAlign: 'right' }}>
+                                    <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value}`}</p>
+                                    <p>{` ﹣₹${transaction.amount}`}</p>
+
+                                </div>
+
                             </div>
-                        </div>
+                        </div>}
                     </li>
                 ))}
             </ul>
-
-            {/* Conditionally render the scanner modal based on visibility */}
-
         </div>
     );
 }

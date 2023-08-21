@@ -7,6 +7,7 @@ import svgData from './svgData';
 import './styles.scss';
 import { useStatus } from '../models/GlobalState';
 
+import { Scanner } from '@codesaursx/react-scanner';
 
 function Home() {
     const navigate = useNavigate();
@@ -14,8 +15,15 @@ function Home() {
     const [user, setUser] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [offerCards, setOfferCards] = useState([]);
+    const [isScannerVisible, setScannerVisible] = useState(false);
+    const [code, setCode] = useState('');
+    const [bill, setBill] = useState(null);
 
     const { status } = useStatus();
+
+    const toggleScanner = () => {
+        setScannerVisible(!isScannerVisible);
+    };
 
     useEffect(() => {
         if (status === 'completed') {
@@ -31,31 +39,32 @@ function Home() {
         }
     };
 
-    useEffect(() => {
-        const scrollContainer = document.querySelector('.horizontal-scroll-container');
-        scrollContainer.addEventListener('scroll', handleCarouselScroll);
+    // useEffect(() => {
+    //     const scrollContainer = document.querySelector('.horizontal-scroll-container');
+    //     // scrollContainer.addEventListener('scroll', handleCarouselScroll);
 
-        return () => {
-            scrollContainer.removeEventListener('scroll', handleCarouselScroll);
-        };
-    }, []);
+    //     return () => {
+    //         scrollContainer.removeEventListener('scroll', handleCarouselScroll);
+    //     };
+    // }, []);
+    const fetchUser = async () => {
+        console.log('Fetching user...'); // Debug log before fetching user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: userData, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('user_id', user.id).single();
+            console.log('User fetched:', userData); // Debug log for fetched user
+            setUser(userData);
+        } else {
+            console.log('No user found, redirecting...'); // Debug log if no user is found
+            navigate('/');
+        }
+    };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            console.log('Fetching user...'); // Debug log before fetching user
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: userData, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('user_id', user.id).single();
-                console.log('User fetched:', userData); // Debug log for fetched user
-                setUser(userData);
-            } else {
-                console.log('No user found, redirecting...'); // Debug log if no user is found
-                navigate('/');
-            }
-        };
+
         fetchUser();
     }, []);
 
@@ -81,6 +90,7 @@ function Home() {
                 .channel('any')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, handleTransactionUpdated)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'offers' }, handleOfferUpdated)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, handleUserUpdated)
                 .subscribe()
 
             console.log('Subscription created for user:', user.user_id);
@@ -92,7 +102,11 @@ function Home() {
         }
     }, [user]);
 
-
+    const handleUserUpdated = (event) => {
+        if (event.new) {
+            setUser(event.new);
+        }
+    }
 
 
     const handleSignOut = async () => {
@@ -111,7 +125,7 @@ function Home() {
 
     const handleTransactionUpdated = (event) => {
         console.log('new');
-        if (event.new && ['INSERT', 'UPDATE'].includes(event.eventType)) fetchTransactions(user.user_id);
+        if (user && event.new && ['INSERT', 'UPDATE'].includes(event.eventType)) fetchTransactions(user.user_id);
     };
 
     const handleOfferUpdated = async (event) => {
@@ -122,7 +136,7 @@ function Home() {
             const { new: newOffer } = event;
             console.log('New offer:', newOffer); // Debug log for the new offer
 
-            if (newOffer.referral_uid) {
+            if (newOffer.referral_uid && user) {
 
                 const { data: inviterDetails } = await supabase
                     .from('users')
@@ -149,37 +163,51 @@ function Home() {
     };
 
     const fetchOfferCards = async (userId) => {
-        const { data, error } = await supabase
-            .from('offers')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+        if (user) {
+            const { data, error } = await supabase
+                .from('offers')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
 
 
-        if (data) {
-            const offersWithInviterDetails = await Promise.all(
-                data.map(async offer => {
-                    if (offer.referral_uid) {
+            if (data) {
+                const offersWithInviterDetails = await Promise.all(
+                    data.map(async offer => {
+                        if (offer && user) {
+                            if (offer.type == 'invite') {
 
-                        console.log('here');
-                        const { data: inviter, error } = await supabase
-                            .from('users')
-                            .select('*')
-                            .eq('user_id', user.invited_by)
-                            .single()
-                        offer.inviter = inviter;
-                    }
-                    return offer;
-                })
-            );
-            setOfferCards(offersWithInviterDetails);
-        } else {
-            setOfferCards([]);
+                                console.log('here');
+                                const { data: inviter, error } = await supabase
+                                    .from('users')
+                                    .select('*')
+                                    .eq('user_id', user.invited_by)
+                                    .single()
+
+                                offer.inviter = inviter;
+                            } else if (offer.type = 'refer') {
+                                const { data: ref, error } = await supabase
+                                    .from('users')
+                                    .select('*')
+                                    .eq('user_id', offer.referral_uid)
+                                    .single()
+                                offer.ref = ref;
+                            }
+                            return offer;
+                        }
+
+                    })
+                );
+                setOfferCards(offersWithInviterDetails);
+            } else {
+                setOfferCards([]);
+            } if (error) {
+                console.error('Error fetching offers:', error);
+            }
         }
 
-        if (error) {
-            console.error('Error fetching offers:', error);
-        }
+
+
     };
 
 
@@ -219,73 +247,218 @@ function Home() {
         }
     };
 
+
+
+
+    const [discount, setDiscount] = useState(null);
+    const [selectedOffer, setSelectedOffer] = useState(null);
+
     const renderCard = (card, index) => {
         if (card.is_used) return null;
 
-        const backgroundImage = `url('https://source.unsplash.com/random?sig=${index}')`;
+        const imgUrl = card.type === 'invite' ? card.inviter?.avatar_url : card.ref?.avatar_url;
+        const name = card.type === 'invite' ? card.inviter?.full_name : card.ref?.full_name;
 
-        switch (card.type) {
-            case 'loyal':
-                return (
-                    <div className="hero-card" key={index} style={{ backgroundImage }}>
-                        <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
-                        <h1>{card.value !== null ? `₹${card.value.toFixed(2)}` : ''}</h1>
-                        <QRCodeCanvas className="qr-code" size={720} value={card.id} includeMargin />
-                    </div>
-                );
-            case 'invite':
-                return (
-                    <div key={index} className="hero-card" style={{ backgroundImage }}>
-                        <img src={card.inviter?.avatar_url} alt="" />
-                        <p>{card.inviter ? card.inviter.full_name : ''}</p>
-                        <p>{card.type}</p>
-                        <QRCodeCanvas className="qr-code" size={720} value={card.id} includeMargin />
-                    </div>
-                );
-            case 'refer':
-                return (
-                    <div key={index} className="hero-card" style={{ backgroundImage }}>
-                        <img src={card.image} alt="" />
-                        <p>{card.type}</p>
-                        <QRCodeCanvas className="qr-code" size={720} value={card.id} style={{ filter: card.is_unlocked ? 'none' : 'blur(10px)' }} includeMargin />
-                    </div>
-                );
-            default:
-                return <div key={index} className="hero-card" style={{ backgroundImage }}>Error</div>;
+        return (
+            <div key={index} className="offer-card" style={card.type === 'refer' && !card.is_unlocked ? { filter: 'grayscale(1)' } : {}}>
+
+                {
+                    card.type === 'invite' || card.type === 'refer' ?
+                        <label htmlFor={`offer-${index}`}>
+                            <div className='stack-h-fill'>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <img style={{ borderRadius: '100px', width: '32px' }} src={imgUrl} alt="" />
+                                    <p>{card.type == 'invite' ? `${name} invited you` : `You invited ${name}`}</p></div>
+                                {
+                                    bill &&
+                                    (card.type === 'refer' && !card.is_unlocked ?
+                                        <div></div> :
+                                        (selectedOffer?.id === card.id ?
+                                            <div className='applied-offer'>✓ Applied</div> :
+                                            <button className='secondary-button apply-button' onClick={() => { setUseBalance(false); setSelectedOffer(card); }}>Apply</button>))
+                                }
+                            </div>
+                            <img style={{ width: '100%' }} src={card.image} />
+                        </label> : ''
+                }
+            </div>
+        );
+    };
+
+    const [useBalance, setUseBalance] = useState(false);
+
+    const discountFromBalance = useBalance ? Math.min(parseFloat(bill), user?.balance ? parseFloat(user?.balance) : 0) : 0;
+    const discountFromWallet = parseFloat(discount ? discount.toFixed(2) : 0);
+    const totalBill = parseFloat(bill) - discountFromBalance - discountFromWallet;
+    const finalBill = Math.max(totalBill, 0);
+
+    const BalanceCard = () => (
+        <div className="offer-card balance-card" style={bill ? { aspectRatio: 'auto' } : {}}>
+            <div className='stack-h-fill'>
+                <div>
+                    <p>Pay using balance</p>
+                    <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
+                </div>
+                <div>
+                    {parseFloat(bill) !== 0 && user?.balance?.toFixed(2) != 0 &&
+                        (useBalance ?
+                            <div className='applied-offer'>✓ Applied</div> :
+                            <button className='secondary-button apply-button' onClick={(e) => { setSelectedOffer(null); setUseBalance(true); }}>Apply</button>)
+                    }
+                </div>
+            </div>
+        </div>
+    );
+
+
+
+
+
+    const BillBox = () => (
+        <div className='bill-box'>
+            <div className='wallet-balance'>
+                <p>Total Bill</p>
+                <p>₹{parseFloat(bill).toFixed(2)}</p>
+            </div>
+            {discountFromBalance > 0 && <div className='wallet-balance'><h2>You saved</h2><h2>-₹{discountFromBalance.toFixed(2)}</h2></div>}
+            {selectedOffer && <div className='wallet-balance'><h2>{`Get a free drink! (worth ₹${selectedOffer.value})`}</h2></div>}
+            <div className='wallet-balance'>
+                <p>Final Bill</p>
+                <p>₹{finalBill.toFixed(2)}</p>
+            </div>
+            <div className='stack-h-fill' style={{ width: '100%', justifyContent: 'space-between' }}>   <button className='secondary-button' onClick={() => setBill(null)}>Cancel</button>
+
+                <button className='scanner' onClick={handleConfirm} disabled={isConfirmDisabled()}>Confirm</button>
+
+            </div>
+
+        </div>
+    );
+
+    const handleConfirm = async () => {
+        // Transaction object to be added
+        let transaction = {
+            is_confirmed: false,
+            bill_value: parseFloat(bill).toFixed(2),
+            amount: parseFloat(discountFromBalance).toFixed(2),
+            type: 'spend',
+
+        };
+
+        // If offer was used
+        if (selectedOffer) {
+            transaction.type = selectedOffer.type;
+            transaction.amount = selectedOffer.value;
+            // Update the offer to 'is_used' = true
+            const updateResponse = await supabase
+                .from('offers')
+                .update({ is_used: true })
+                .eq('id', selectedOffer.id);
+
+            if (updateResponse.error) {
+                console.error("Error updating offer:", updateResponse.error);
+                return; // Handle error appropriately
+            }
         }
+
+
+
+        // Add the transaction to the transactions table
+        const insertResponse = await supabase
+            .from('transactions')
+            .insert([transaction]);
+
+        var newBal = user.balance - discountFromBalance;
+
+        const { data, error } = await supabase
+            .from('users')
+            .update({ balance: newBal })
+            .eq('user_id', user.user_id)
+            .select();
+
+
+        if (insertResponse.error) {
+            console.error("Error inserting transaction:", insertResponse.error);
+            return; // Handle error appropriately
+        }
+
+        fetchUser();
+        setUseBalance(false);
+        setSelectedOffer(null);
+        setBill(null);
+
     };
 
 
-    return (
-        <div className="styled-container"><div className='navbar'><div dangerouslySetInnerHTML={{ __html: nomsterSVG }} />
-        </div>
-            <div className="horizontal-scroll-container">
-                {offerCards.map(renderCard)}
-                <div className="hero-card" onClick={handleShareOffer}>
-                    <div dangerouslySetInnerHTML={{ __html: offerSVG }} />
-                </div>
-            </div>
-            <ul className='list'>
-                {transactions.map((transaction) => (
-                    <li key={transaction.id} style={{ listStyleType: 'none' }}>
-                        <div className='list-item'  >
-                            <div className='wallet-balance'>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ backgroundColor: '#eee', borderRadius: '100px' }}><p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}> {transaction.type == 'earn' ? '↓' : transaction.type == 'refer' ? '🥤' : transaction.type == 'invite' ? '🥤' : '↑'}</p>
-                                    </div> <div><p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{transaction.type}</p> <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
-                                    </div>
-                                </div>
-                                <p>{renderTransactionAmount(transaction)}</p></div>
 
+    const isConfirmDisabled = () => {
+
+    }
+
+    const renderTransactions = (transactions) => {
+        return transactions.map(({ id, type, created_at, amount, is_confirmed }, i) => (
+            <li key={id} style={{ listStyleType: 'none' }}>
+                <div className='list-item'>
+                    <div className='wallet-balance'>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
+                                <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
+                                    {type == 'earn' ? '₹' : type == 'refer' || type == 'invite' ? '🥤' : '₹'}</p>
+                            </div>
+                            <div>
+                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}> {type == 'spend' ? `Saved ₹${amount} on bill` : type == 'earn' ? `Earned ₹${amount} cashback` : (type == 'invite' || type == 'refer') ? `You got a FREE drink` : ''}</p>
+                                <p style={{ color: 'gray' }}>{formatDate(created_at)}</p>
+                            </div>
+                        </div>
+                        {!is_confirmed && <p style={{ color: 'gray', fontStyle: 'italic', color: 'brown' }}>Processing</p>}
+                    </div>
+                </div>
+            </li>
+        ));
+    };
+
+
+
+    return (
+        <div className="styled-container">
+            {/* <div className='navbar'><div dangerouslySetInnerHTML={{ __html: nomsterSVG }} /></div> */}
+            {isScannerVisible ? (
+                <div className="scanner-modal">
+                    <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
+                    <Scanner width="100%" height="100%" onUpdate={(e, data) => data && (setCode(data.getText()), toggleScanner(), setBill(data.getText()))} />
+                </div>
+            ) : (
+                <>
+                    {bill ? <BalanceCard /> : (
+                        <div style={{ width: '100%' }}>
+                            <div className="offer-card balance-card">
+                                <div className='stack-h-fill'>
+                                    <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
+                                    <div style={{ width: '48px' }} dangerouslySetInnerHTML={{ __html: svgData.tcwLogo }} />
+
+                                </div>
+                                <div className='stack-h-fill' style={{ justifyContent: 'space-between' }}>
+                                    <code>Get 10% cashback on every purchase</code>
+
+                                    <button className='scanner' onClick={toggleScanner}>{!isScannerVisible ? 'Redeem' : 'Close'}</button>
+                                </div>
+                            </div>
 
                         </div>
-                    </li>
-                ))}
-            </ul>
-            <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
-
-        </div >
+                    )}
+                    {offerCards.map(renderCard)}
+                    {bill ? <BillBox /> : <div className="offer-card" onClick={handleShareOffer}><img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /></div>}
+                    {/* {transactions.length ? <h4>HISTORY</h4> : ''} */}
+                    {!bill && <ul className='list'>{renderTransactions(transactions)}</ul>}
+                    <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
+                </>
+            )}
+        </div>
     );
+
+
+
+
 }
 
 export default Home;

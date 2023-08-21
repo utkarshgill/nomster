@@ -5,7 +5,6 @@ import Home from './views/Home.js';
 import { createClient } from '@supabase/supabase-js';
 import { indigo } from '@mui/material/colors';
 import Admin from './views/Admin.js';
-import Billing from './views/Billing.js';
 import mixpanel from 'mixpanel-browser';
 import Privacy from './views/Privacy.js';
 import Tos from './views/Tos.js';
@@ -38,7 +37,6 @@ function App() {
           <Route exact path='' element={<Navigate to="/" />} />
           <Route path='/home' element={<Home />} />
           <Route path='/admin' element={<Admin />} />
-          <Route path='/billing' element={<Billing />} />
           <Route path='/privacy' element={<Privacy />} />
           <Route path='/tos' element={<Tos />} />
         </Routes>
