@@ -170,6 +170,7 @@ function Home() {
 
 
             if (data) {
+                console.log(data);
                 const offersWithInviterDetails = await Promise.all(
                     data.map(async offer => {
                         if (offer && user) {
@@ -263,20 +264,15 @@ function Home() {
                 {
                     card.type === 'invite' || card.type === 'refer' ?
                         <label htmlFor={`offer-${index}`}>
-                            <div className='stack-h-fill'>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <img style={{ borderRadius: '100px', width: '32px' }} src={imgUrl} alt="" />
-                                    <p>{card.type == 'invite' ? `${name} invited you` : `You invited ${name}`}</p></div>
-                                {
-                                    bill &&
-                                    (card.type === 'refer' && !card.is_unlocked ?
-                                        <div></div> :
-                                        (selectedOffer?.id === card.id ?
-                                            <div className='applied-offer'>✓ Applied</div> :
-                                            <button className='secondary-button apply-button' onClick={() => { setUseBalance(false); setSelectedOffer(card); }}>Apply</button>))
-                                }
-                            </div>
+
                             <img style={{ width: '100%' }} src={card.image} />
+                            <div className='stack-h-fill'>
+                                <p>{card.type == 'invite' ? `${name} invited you` : `Because you invited ${name}`}</p>
+
+                                <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" />
+
+
+                            </div>
                         </label> : ''
                 }
             </div>
@@ -294,14 +290,14 @@ function Home() {
         <div className="offer-card balance-card" style={bill ? { aspectRatio: 'auto' } : {}}>
             <div className='stack-h-fill'>
                 <div>
-                    <p>Pay using balance</p>
+                    <p>Balance</p>
                     <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
                 </div>
                 <div>
                     {parseFloat(bill) !== 0 && user?.balance?.toFixed(2) != 0 &&
                         (useBalance ?
                             <div className='applied-offer'>✓ Applied</div> :
-                            <button className='secondary-button apply-button' onClick={(e) => { setSelectedOffer(null); setUseBalance(true); }}>Apply</button>)
+                            <button className='secondary-button' onClick={(e) => { setSelectedOffer(null); setUseBalance(true); }}>Use balance</button>)
                     }
                 </div>
             </div>
@@ -430,23 +426,7 @@ function Home() {
                 </div>
             ) : (
                 <>
-                    {bill ? <BalanceCard /> : (
-                        <div style={{ width: '100%' }}>
-                            <div className="offer-card balance-card">
-                                <div className='stack-h-fill'>
-                                    <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
-                                    <div style={{ width: '48px' }} dangerouslySetInnerHTML={{ __html: svgData.tcwLogo }} />
-
-                                </div>
-                                <div className='stack-h-fill' style={{ justifyContent: 'space-between' }}>
-                                    <code>Get 10% cashback on every purchase</code>
-
-                                    <button className='scanner' onClick={toggleScanner}>{!isScannerVisible ? 'Redeem' : 'Close'}</button>
-                                </div>
-                            </div>
-
-                        </div>
-                    )}
+                    <BalanceCard />
                     {offerCards.map(renderCard)}
                     {bill ? <BillBox /> : <div className="offer-card" onClick={handleShareOffer}><img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /></div>}
                     {/* {transactions.length ? <h4>HISTORY</h4> : ''} */}

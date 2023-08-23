@@ -68,7 +68,10 @@ p {
 }
 
 code {
+
+    margin: 20px;
     width: 50%;
+    color: white;
 }
 
 .apply-button {
@@ -322,11 +325,12 @@ input[type="number"] {
     left: 0;
 }
 
+
+
 .balance-card {
     background-color: #fff;
     padding: 24px;
-    aspect-ratio: 1.6;
-    border: 2px solid #462B2F;
+    // border: 2px solid #462B2F;
     border-radius: 22px;
     width: 100%;
     height: auto;
