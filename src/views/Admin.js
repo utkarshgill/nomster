@@ -134,7 +134,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             </div>
             <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
                 <button className='secondary-button' onClick={handleCancel}>Cancel</button>
-                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number, finalBill, discount)}>Confirm</button>
+                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number, finalBill)}>Confirm</button>
             </div>
         </div>
     );

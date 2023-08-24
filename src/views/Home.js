@@ -293,7 +293,7 @@ function Home() {
             <p>C A S H B A C K</p>
             <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
 
-            <QRCodeCanvas fgColor='#2B1317' value={user?.user_id + '&spend'} includeMargin className='qr-code'></QRCodeCanvas>
+            <QRCodeCanvas fgColor='#2B1317' value={user?.user_id + '&spend' + '%cardID'} includeMargin className='qr-code'></QRCodeCanvas>
 
             <p>Get 10% cashback on every transaction</p>
 
