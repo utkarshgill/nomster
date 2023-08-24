@@ -41,7 +41,9 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             ]);
 
             await supabase
-                .rpc('update_balance', { uid: uid, change: -discount });
+                .from('users')
+                .update({ balance: customer.balance - discount })
+                .eq('user_id', customer.user_id);
         } else if (type === 'refer' || type === 'invite') {
             const { data: offer } = await supabase
                 .from('offers')
@@ -93,7 +95,9 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             ]);
 
             await supabase
-                .rpc('update_balance', { uid: uid, change: cashback });
+                .from('users')
+                .update({ balance: customer.balance + cashback })
+                .eq('user_id', customer.user_id);
         }
 
         clearState();
