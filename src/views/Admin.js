@@ -27,8 +27,9 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
     async function handleConfirm(type, uid, offerId, billValue, finalBill) {
 
         if (type === 'spend') {
-            discount = Number(discount);
 
+
+            const discount = Math.min(customer?.balance, billValue);
             await supabase.from('transactions').insert([
                 {
                     user_id: customer.user_id,
