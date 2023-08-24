@@ -7,7 +7,6 @@ import svgData from './svgData';
 import './styles.scss';
 import { useStatus } from '../models/GlobalState';
 
-import { Scanner } from '@codesaursx/react-scanner';
 
 function Home() {
     const navigate = useNavigate();
@@ -15,15 +14,8 @@ function Home() {
     const [user, setUser] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [offerCards, setOfferCards] = useState([]);
-    const [isScannerVisible, setScannerVisible] = useState(false);
-    const [code, setCode] = useState('');
-    const [bill, setBill] = useState(null);
 
     const { status } = useStatus();
-
-    const toggleScanner = () => {
-        setScannerVisible(!isScannerVisible);
-    };
 
     useEffect(() => {
         if (status === 'completed') {
@@ -249,9 +241,6 @@ function Home() {
 
 
 
-    const [discount, setDiscount] = useState(null);
-    const [selectedOffer, setSelectedOffer] = useState(null);
-
     const renderCard = (card, index) => {
         if (card.is_used) return null;
 
@@ -259,19 +248,34 @@ function Home() {
         const name = card.type === 'invite' ? card.inviter?.full_name : card.ref?.full_name;
 
         return (
-            <div key={index} className="offer-card" style={card.type === 'refer' && !card.is_unlocked ? { filter: 'grayscale(1)' } : {}}>
+            <div key={index} className="offer-card" >
 
                 {
                     card.type === 'invite' || card.type === 'refer' ?
                         <label htmlFor={`offer-${index}`}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'end',
+                                justifyContent: 'center',
+                                boxSizing: 'border-box',
+                                padding: '80px',
+                                marginBottom: '10px',
 
-                            <img style={{ width: '100%' }} src={card.image} />
+                                position: 'relative',
+                                backgroundImage: `url(${card.image})`,
+                                backgroundSize: 'cover',
+                                backgroundRepeat: 'no-repeat',
+                                aspectRatio: '1280/1792'
+                            }}>
+
+                                <QRCodeCanvas fgColor='#2B1317' className='qr-code' value={user?.user_id + '&' + card.type + '%' + card.id} includeMargin style={card.type === 'refer' && !card.is_unlocked ? { filter: 'blur(10px)' } : {}} />
+
+                            </div>
+
+
                             <div className='stack-h-fill'>
-                                <p>{card.type == 'invite' ? `${name} invited you` : `Because you invited ${name}`}</p>
-
+                                <p>{card.type == 'invite' ? `Because ${name} invited you` : `Because you invited ${name}`}</p>
                                 <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" />
-
-
                             </div>
                         </label> : ''
                 }
@@ -279,118 +283,33 @@ function Home() {
         );
     };
 
-    const [useBalance, setUseBalance] = useState(false);
 
-    const discountFromBalance = useBalance ? Math.min(parseFloat(bill), user?.balance ? parseFloat(user?.balance) : 0) : 0;
-    const discountFromWallet = parseFloat(discount ? discount.toFixed(2) : 0);
-    const totalBill = parseFloat(bill) - discountFromBalance - discountFromWallet;
-    const finalBill = Math.max(totalBill, 0);
+
 
     const BalanceCard = () => (
-        <div className="offer-card balance-card" style={bill ? { aspectRatio: 'auto' } : {}}>
-            <div className='stack-h-fill'>
-                <div>
-                    <p>Balance</p>
-                    <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
-                </div>
-                <div>
-                    {parseFloat(bill) !== 0 && user?.balance?.toFixed(2) != 0 &&
-                        (useBalance ?
-                            <div className='applied-offer'>✓ Applied</div> :
-                            <button className='secondary-button' onClick={(e) => { setSelectedOffer(null); setUseBalance(true); }}>Use balance</button>)
-                    }
-                </div>
-            </div>
-        </div>
+        <div className="offer-card balance-card"  >
+
+
+            <p>C A S H B A C K</p>
+            <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
+
+            <QRCodeCanvas fgColor='#2B1317' value={user?.user_id + '&spend'} includeMargin className='qr-code'></QRCodeCanvas>
+
+            <p>Get 10% cashback on every transaction</p>
+
+        </div >
     );
 
 
 
 
 
-    const BillBox = () => (
-        <div className='bill-box'>
-            <div className='wallet-balance'>
-                <p>Total Bill</p>
-                <p>₹{parseFloat(bill).toFixed(2)}</p>
-            </div>
-            {discountFromBalance > 0 && <div className='wallet-balance'><h2>You saved</h2><h2>-₹{discountFromBalance.toFixed(2)}</h2></div>}
-            {selectedOffer && <div className='wallet-balance'><h2>{`Get a free drink! (worth ₹${selectedOffer.value})`}</h2></div>}
-            <div className='wallet-balance'>
-                <p>Final Bill</p>
-                <p>₹{finalBill.toFixed(2)}</p>
-            </div>
-            <div className='stack-h-fill' style={{ width: '100%', justifyContent: 'space-between' }}>   <button className='secondary-button' onClick={() => setBill(null)}>Cancel</button>
-
-                <button className='scanner' onClick={handleConfirm} disabled={isConfirmDisabled()}>Confirm</button>
-
-            </div>
-
-        </div>
-    );
-
-    const handleConfirm = async () => {
-        // Transaction object to be added
-        let transaction = {
-            is_confirmed: false,
-            bill_value: parseFloat(bill).toFixed(2),
-            amount: parseFloat(discountFromBalance).toFixed(2),
-            type: 'spend',
-            offer_id: selectedOffer ? selectedOffer.id : undefined,
-            ref_offer_id: selectedOffer && selectedOffer.type == 'invite' ? selectedOffer.referral_uid : ''
-
-        };
-
-        // If offer was used
-        if (selectedOffer) {
-
-            transaction.type = selectedOffer.type;
-            transaction.amount = selectedOffer.value;
-            // Update the offer to 'is_used' = true
-            const updateResponse = await supabase
-                .from('offers')
-                .update({ is_used: true })
-                .eq('id', selectedOffer.id);
-
-            if (updateResponse.error) {
-                console.error("Error updating offer:", updateResponse.error);
-                return; // Handle error appropriately
-            }
-        }
 
 
 
-        // Add the transaction to the transactions table
-        const insertResponse = await supabase
-            .from('transactions')
-            .insert([transaction]);
-
-        var newBal = user.balance - discountFromBalance;
-
-        const { data, error } = await supabase
-            .from('users')
-            .update({ balance: newBal })
-            .eq('user_id', user.user_id)
-            .select();
-
-
-        if (insertResponse.error) {
-            console.error("Error inserting transaction:", insertResponse.error);
-            return; // Handle error appropriately
-        }
-
-        fetchUser();
-        setUseBalance(false);
-        setSelectedOffer(null);
-        setBill(null);
-
-    };
 
 
 
-    const isConfirmDisabled = () => {
-
-    }
 
     const renderTransactions = (transactions) => {
         return transactions.map(({ id, type, created_at, amount, is_confirmed }, i) => (
@@ -416,24 +335,36 @@ function Home() {
 
 
 
+    const handleClick = (url) => {
+        window.open(url, '_blank');
+    }
+
     return (
         <div className="styled-container">
-            {/* <div className='navbar'><div dangerouslySetInnerHTML={{ __html: nomsterSVG }} /></div> */}
-            {isScannerVisible ? (
-                <div className="scanner-modal">
-                    <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
-                    <Scanner width="100%" height="100%" onUpdate={(e, data) => data && (setCode(data.getText()), toggleScanner(), setBill(data.getText()))} />
-                </div>
-            ) : (
-                <>
-                    <BalanceCard />
-                    {offerCards.map(renderCard)}
-                    {bill ? <BillBox /> : <div className="offer-card" onClick={handleShareOffer}><img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /></div>}
-                    {/* {transactions.length ? <h4>HISTORY</h4> : ''} */}
-                    {!bill && <ul className='list'>{renderTransactions(transactions)}</ul>}
-                    <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
-                </>
-            )}
+            <div className='navbar'>
+                <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
+            </div>
+            <BalanceCard />
+            {offerCards.map(renderCard)}
+            <div className="offer-card" onClick={handleShareOffer}><img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /></div>
+            <ul className='list'>{renderTransactions(transactions)}</ul>
+            <div className='hero-card' style={{ alignItems: 'center', }}>
+                <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
+                <h2 style={{ textAlign: 'center' }}>{'Visit The Country Wok, Nizampura, Vadodara to claim your rewards 🎁'}
+                </h2>  <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Directions</button>
+                <button className='secondary-button' onClick={() => handleClick('http://zoma.to/r/19997766')}>Order on Zomato</button>
+                <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Order on Swiggy</button>
+
+                <a href={`tel:${'+918199079413'}`} className='secondary-button' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>Call us at 8199079413</a>
+            </div>
+            <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
+            <footer className='footer'>
+                <nav>
+                    <a href="/tos">Terms of Service</a>
+                    <a href="https://twitter.com/nomsterindia" target="_blank" rel="noopener noreferrer">Twitter</a>
+                    <a href="/privacy">Privacy Policy</a>
+                </nav>
+            </footer>
         </div>
     );
 

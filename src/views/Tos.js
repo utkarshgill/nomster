@@ -23,7 +23,7 @@ const Tos = () => {
             <p>We may modify these Terms at any time. Your continued use of our services after any modification constitutes your acceptance of the new Terms.</p>
 
             <h2>Contact</h2>
-            <p>If you have any questions about these Terms, please contact us at utkarshgill07@gmail.com.</p>
+            <p>If you have any questions about these Terms, please contact us at support@nomster.in</p>
         </div>
     );
 };

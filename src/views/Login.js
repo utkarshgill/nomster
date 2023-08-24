@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStatus } from '../models/GlobalState';
 
 
+import QRCodeCanvas from 'qrcode.react';
 
 
 function Login() {
@@ -233,25 +234,45 @@ function Login() {
   }, [navigate]);
 
   return (
-    <div className='styled-container'>
+    <div className='styled-container' style={{ height: '100vh', justifyContent: 'center' }}>
 
-      {inviterName && inviterImage ? <div className='navbar'>
+      <div className='navbar'>
         <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
-      </div> : ''}
-      <div className='bill-box' style={{ height: '280px', alignItems: 'center', border: 'none' }}>
-
-        {inviterName && inviterImage ? (
-          <div className='stack-h-fill' style={{ gap: '12px' }}>
-            <img style={{ borderRadius: '100px', width: '32px' }} src={inviterImage} alt={inviterName} />
-            <span>{`${inviterName} sent you a drink`}</span>
-          </div>
-        ) : <div className='navbar'>
-          <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
-        </div>}
-        {offerImage && inviterName ? <img style={{ width: '100%' }} src={offerImage} /> : <div />}
-        <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
       </div>
-    </div>
+
+      {inviterName && inviterImage ? (
+        <div className='stack-h-fill' style={{ gap: '12px' }}>
+          <img style={{ borderRadius: '100px', width: '32px' }} src={inviterImage} alt={inviterName} />
+          <span>{`${inviterName} sent you a drink`}</span>
+        </div>
+      ) : ''}
+      {offerImage && inviterName ? <div style={{
+        display: 'flex',
+        alignItems: 'end',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        padding: '80px',
+        marginBottom: '10px',
+
+        position: 'relative',
+        backgroundImage: `url(${offerImage})`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        aspectRatio: '1280/1792'
+      }}>
+
+        <QRCodeCanvas fgColor='#2B1317' className='qr-code' value={inviterName} includeMargin style={{ filter: 'blur(10px)' }} />
+
+      </div> : <div />}
+      <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
+      <footer className='footer'>
+        <nav>
+          <a href="/tos">Terms of Service</a>
+          <a href="https://twitter.com/nomsterindia" target="_blank" rel="noopener noreferrer">Twitter</a>
+          <a href="/privacy">Privacy Policy</a>
+        </nav>
+      </footer>
+    </div >
   );
 }
 

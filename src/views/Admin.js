@@ -2,13 +2,151 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../App';
 import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode.react';
+import { Scanner } from '@codesaursx/react-scanner';
+
+function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions }) {
+    const type = code.split('&')[1].split('%')[0];
+    const uid = code.split('&')[0];
+    const offerId = code.split('%')[1];
+    const [offerName, setOfferName] = useState('');
+    let discount = type === 'spend' ? Math.min(customer?.balance, number) : 0;
+    let finalBill = Math.max(0, number - discount);
+
+    useEffect(() => {
+        supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
+            setCustomer(data);
+        });
+
+        if (type === 'refer' || type === 'invite') {
+            supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
+                setOfferName(data.name);
+            });
+        }
+    }, [code, customer, number]);
+
+    async function handleConfirm(type, uid, offerId, billValue, finalBill, discount) {
+
+
+        if (type === 'spend') {
+
+
+
+
+            await supabase.from('transactions').insert([
+                {
+                    user_id: customer.user_id,
+                    offer_id: offerId,
+                    type: 'spend',
+                    amount: discount,
+                    bill_value: billValue,
+                    is_confirmed: true,
+                },
+            ]);
+
+
+            await supabase
+                .rpc('update_balance', { uid: uid, change: -discount });
+        } else if (type === 'refer' || type === 'invite') {
+            const { data: offer } = await supabase
+                .from('offers')
+                .select('*')
+                .eq('id', offerId)
+                .single();
+
+            await supabase.from('transactions').insert([
+                {
+                    user_id: customer.user_id,
+                    offer_id: offerId,
+                    type: type,
+                    amount: -offer.value,
+                    bill_value: billValue,
+                    is_confirmed: true,
+                },
+            ]);
+
+            await supabase
+                .from('offers')
+                .update({ is_used: true })
+                .eq('id', offerId);
+
+            if (type === 'invite') {
+                await supabase
+                    .from('offers')
+                    .update({ is_unlocked: true })
+                    .eq('id', offer.referral_uid);
+
+                await supabase
+                    .from('users')
+                    .update({ is_activated: true })
+                    .eq('user_id', customer.user_id);
+            }
+        }
+
+        if (finalBill !== 0) {
+            const cashback = (finalBill * 0.1).toFixed(2);
+
+            await supabase.from('transactions').insert([
+                {
+                    user_id: uid,
+                    offer_id: offerId,
+                    type: 'earn',
+                    amount: cashback,
+                    bill_value: finalBill,
+                    is_confirmed: true,
+                },
+            ]);
+
+            await supabase
+                .rpc('update_balance', { uid: uid, change: cashback });
+        }
+
+        clearState();
+        fetchTransactions();
+    };
+
+    function clearState() {
+        setNumber(null)
+        setCode(null)
+        setCustomer(null)
+        setOfferName(null)
+    }
+
+    function handleCancel() {
+        clearState()
+    }
+
+
+    return (
+        <div className='bill-box'>
+            <div className='wallet-balance'>
+
+                <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
+            </div>
+            {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
+            {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
+            {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
+            <div className='wallet-balance'>
+                <h1>Final Bill</h1>
+                <h1>₹{finalBill.toFixed(2)}</h1>
+            </div>
+            <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
+                <button className='secondary-button' onClick={handleCancel}>Cancel</button>
+                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number, finalBill, discount)}>Confirm</button>
+            </div>
+        </div>
+    );
+}
+
 
 function Admin() {
     const [transactions, setTransactions] = useState([]);
     const [usersMap, setUsersMap] = useState({});
-    const [number, setNumber] = useState('');
+    const [number, setNumber] = useState(0.00);
     const navigate = useNavigate();
-
+    const [code, setCode] = useState('');
+    const [customer, setCustomer] = useState(null);
+    const [offerName, setOfferName] = useState('');
+    const [isScannerVisible, setScannerVisible] = useState(false);
     const specificUserId = '4e24e5ce-23ce-40d2-bf93-f12273e1b746';
 
     useEffect(() => {
@@ -19,14 +157,14 @@ function Admin() {
         const subscription = supabase
             .channel('any')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchTransactions)
-            .subscribe()
-
-
+            .subscribe();
 
         return () => subscription.unsubscribe();
     }, []);
 
-
+    const toggleScanner = () => {
+        setScannerVisible(!isScannerVisible);
+    };
 
     async function checkUser() {
         try {
@@ -60,6 +198,7 @@ function Admin() {
         }
     }
 
+
     const formatDate = (dateString) => {
         const options = { day: 'numeric', month: 'short' };
         return new Date(dateString).toLocaleDateString(undefined, options);
@@ -80,7 +219,7 @@ function Admin() {
             .select('*')
             .eq('brand_id', specificUserId)
             .in('type', ['spend', 'invite', 'refer'])
-            .order('created_at', { ascending: false })
+            .order('created_at', { ascending: false });
 
         if (data) {
             setTransactions(data);
@@ -90,115 +229,29 @@ function Admin() {
         }
     }
 
-    const handleListItemNavigation = (transaction) => {
-        navigate(`/billing?offerId=${transaction.offer_id}`);
-    }
-
-    async function handleConfirm(transaction) {
-        console.log("Transaction ID:", transaction.id);
-        const transactionId = transaction.id;
-        const finalBill = transaction.bill_value - transaction.amount;
-
-        // Update the transaction with is_confirmed = true
-        const updateResponse = await supabase
-            .from('transactions')
-            .update({ is_confirmed: true })
-            .eq('id', transactionId);
-
-        console.log("Update Response:", updateResponse);
-
-        if (updateResponse.error) {
-            console.error("Error updating offer:", updateResponse.error);
-            return; // Handle error appropriately
-        }
-
-        if (updateResponse.data === null) {
-            console.warn("No matching transaction found to update. Check the transaction ID.");
-        }
-        // If Final bill is not 0, add another transaction with type=earn, and amount = final bill * 0.2, is_confirmed = true
-        if (finalBill !== 0) {
-            await supabase
-                .from('transactions')
-                .insert([
-                    {
-                        user_id: transaction.user_id,
-                        type: 'earn',
-                        amount: (finalBill * 0.1).toFixed(2),
-                        is_confirmed: true
-                    },
-                ]);
-            const newBal = (finalBill * 0.1);
-            const { data, error } = await supabase
-                .rpc('update_balance', { uid: transaction.user_id, change: newBal });;
-        }
-
-        // If the transaction type is invite, then set the user to is_activated in users table
-        if (transaction.type === 'invite') {
-            const userId = transaction.user_id;
-            await supabase
-                .from('users')
-                .upsert({ is_activated: true })
-                .eq('user_id', userId).single();
-
-            await supabase
-                .from('offers')
-                .upsert({ is_used: true })
-                .eq('id', transaction.offer_id)
-
-            await supabase
-                .from('offers')
-                .upsert({ is_unlocked: true })
-                .eq('id', transaction.ref_offer_id)
-        }
-
-        // Fetch updated transactions
-        fetchTransactions();
-    };
-
-
-
-    function BillBox(transaction) {
-        return (<div className='bill-box'>
-            <div className='wallet-balance'>
-                <h2>Total Bill</h2>
-                <h2>₹{parseFloat(transaction.bill_value).toFixed(2)}</h2>
-            </div>
-            {transaction.type === 'spend' && <div className='wallet-balance'><p>Discount from balance</p><p>-₹{transaction.amount.toFixed(2)}</p></div>}
-            {transaction.type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type}`}</p></div>}
-            {transaction.type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type}`}</p></div>}
-
-            <div className='wallet-balance'>
-                <h1>Final Bill</h1>
-                <h1>₹{(transaction.bill_value - transaction.amount).toFixed(2)}</h1>
-            </div>
-
-            <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>   <button className='secondary-button' >Cancel</button>
-
-                <button className='scanner' onClick={() => handleConfirm(transaction)} >Confirm</button>
-
-            </div>
-
-        </div>);
-
-    };
 
 
 
     return (
         <div className='styled-container'>
-            <div className='navbar'>
-                {/* Add additional content if needed */}
-            </div>
 
-            <div className='hero-card'>
-                <QRCode value={number} />
-            </div>
-            <input className='bill-input' placeholder='Enter bill amount' type="number" value={number} onChange={e => setNumber(e.target.value)} />
+
+
+            {isScannerVisible ? (
+                <div className="scanner-modal">
+                    <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
+                    <Scanner width="100%" height="100%" onUpdate={(e, data) => data && (setCode(data.getText()), toggleScanner())} />
+                </div>
+            ) : ''}
+
+            {!code && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
+
+            {code ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} /> : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
                     <li key={transaction.id} style={{ listStyleType: 'none' }}>
-                        {!transaction.is_confirmed ? BillBox(transaction) : <div className='list-item' >
+                        {<div className='list-item' >
                             <div className='wallet-balance'>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                     {usersMap[transaction.user_id] && (
@@ -215,7 +268,7 @@ function Admin() {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value}`}</p>
-                                    <p>{` ﹣₹${transaction.amount}`}</p>
+                                    <p>{` ﹣₹${Math.abs(transaction.amount)}`}</p>
 
                                 </div>
 
