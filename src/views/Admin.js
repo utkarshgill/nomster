@@ -29,7 +29,6 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         if (type === 'spend') {
 
 
-            const discount = Math.min(customer?.balance, billValue);
             await supabase.from('transactions').insert([
                 {
                     user_id: customer.user_id,
@@ -41,10 +40,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
                 },
             ]);
 
-            await supabase
-                .from('users')
-                .update({ balance: customer.balance - discount })
-                .eq('user_id', customer.user_id);
+
 
         } else if (type === 'refer' || type === 'invite') {
             const { data: offer } = await supabase
@@ -85,6 +81,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         if (finalBill !== 0) {
             const cashback = Number((finalBill * 0.1).toFixed(2));
 
+            const discount = Math.min(customer?.balance || 0, billValue);
             await supabase.from('transactions').insert([
                 {
                     user_id: uid,
@@ -98,7 +95,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
 
             await supabase
                 .from('users')
-                .update({ balance: customer.balance + cashback })
+                .update({ balance: (customer.balance || 0) + cashback - discount })
                 .eq('user_id', customer.user_id);
         }
 
