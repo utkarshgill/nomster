@@ -352,7 +352,7 @@ function Home() {
                 <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
                 <h2 style={{ textAlign: 'center' }}>{'Visit The Country Wok, Nizampura, Vadodara to claim your rewards 🎁'}
                 </h2>  <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Directions</button>
-                <button className='secondary-button' onClick={() => handleClick('http://zoma.to/r/19997766')}>Order on Zomato</button>
+                <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Order on Zomato</button>
                 <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Order on Swiggy</button>
 
                 <a href={`tel:${'+918199079413'}`} className='secondary-button' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>Call us at 8199079413</a>

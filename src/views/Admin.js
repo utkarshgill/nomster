@@ -26,11 +26,8 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
 
     async function handleConfirm(type, uid, offerId, billValue, finalBill, discount) {
 
-
         if (type === 'spend') {
-
-
-
+            discount = Number(discount);
 
             await supabase.from('transactions').insert([
                 {
@@ -42,7 +39,6 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
                     is_confirmed: true,
                 },
             ]);
-
 
             await supabase
                 .rpc('update_balance', { uid: uid, change: -discount });
@@ -83,7 +79,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         }
 
         if (finalBill !== 0) {
-            const cashback = (finalBill * 0.1).toFixed(2);
+            const cashback = Number((finalBill * 0.1).toFixed(2));
 
             await supabase.from('transactions').insert([
                 {
@@ -103,6 +99,8 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         clearState();
         fetchTransactions();
     };
+
+
 
     function clearState() {
         setNumber(null)
