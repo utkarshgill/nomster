@@ -24,7 +24,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         }
     }, [code, customer, number]);
 
-    async function handleConfirm(type, uid, offerId, billValue, finalBill, discount) {
+    async function handleConfirm(type, uid, offerId, billValue, finalBill) {
 
         if (type === 'spend') {
             discount = Number(discount);
@@ -44,6 +44,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
                 .from('users')
                 .update({ balance: customer.balance - discount })
                 .eq('user_id', customer.user_id);
+
         } else if (type === 'refer' || type === 'invite') {
             const { data: offer } = await supabase
                 .from('offers')
