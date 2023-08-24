@@ -147,7 +147,7 @@ function Admin() {
     const [customer, setCustomer] = useState(null);
     const [offerName, setOfferName] = useState('');
     const [isScannerVisible, setScannerVisible] = useState(false);
-    const specificUserId = '4e24e5ce-23ce-40d2-bf93-f12273e1b746';
+    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
     useEffect(() => {
         checkUser();
