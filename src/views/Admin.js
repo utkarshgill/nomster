@@ -78,8 +78,9 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             }
         }
 
+        const cashback = Number((finalBill * 0.1).toFixed(2));
+
         if (finalBill !== 0) {
-            const cashback = Number((finalBill * 0.1).toFixed(2));
 
             const discount = Math.min(customer?.balance || 0, billValue);
             await supabase.from('transactions').insert([
@@ -93,11 +94,12 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
                 },
             ]);
 
-            await supabase
-                .from('users')
-                .update({ balance: (customer.balance || 0) + cashback - discount })
-                .eq('user_id', customer.user_id);
+
         }
+        await supabase
+            .from('users')
+            .update({ balance: (customer.balance || 0) + cashback - discount })
+            .eq('user_id', customer.user_id);
 
         clearState();
         fetchTransactions();
