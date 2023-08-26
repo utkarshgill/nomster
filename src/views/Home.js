@@ -274,7 +274,7 @@ function Home() {
 
 
                             <div className='stack-h-fill'>
-                                <p>{card.type == 'invite' ? `Because ${name} invited you` : `Because you invited ${name}`}</p>
+                                <p>{card.type == 'invite' ? `Because ${name} invited you` : card.type === 'refer' ? `Because you invited ${name}` : !card.is_unlocked ? `Because you invited ${name} (Unlocks after their first order)` : `Because you invited ${name}`}</p>
                                 <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" />
                             </div>
                         </label> : ''
