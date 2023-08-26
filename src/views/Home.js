@@ -247,6 +247,8 @@ function Home() {
         const imgUrl = card.type === 'invite' ? card.inviter?.avatar_url : card.ref?.avatar_url;
         const name = card.type === 'invite' ? card.inviter?.full_name : card.ref?.full_name;
 
+        name = name.split(' ')[0];
+
         return (
             <div key={index} className="offer-card" >
 
