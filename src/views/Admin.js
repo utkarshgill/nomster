@@ -4,123 +4,98 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode.react';
 import { Scanner } from '@codesaursx/react-scanner';
 
-function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions }) {
+function BillBox({
+    code, customer, number,
+    setCustomer, setCode, setNumber,
+    clearState, fetchTransactions
+}) {
     const type = code.split('&')[1].split('%')[0];
     const uid = code.split('&')[0];
     const offerId = code.split('%')[1];
     const [offerName, setOfferName] = useState('');
-    let discount = type === 'spend' ? Math.min(customer?.balance, number) : 0;
-    let finalBill = Math.max(0, number - discount);
 
     useEffect(() => {
-        supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
-            setCustomer(data);
-        });
-
-        if (type === 'refer' || type === 'invite') {
-            supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
-                setOfferName(data.name);
-            });
-        }
+        fetchCustomer();
+        fetchOfferName();
     }, [code, customer, number]);
 
-    async function handleConfirm(type, uid, offerId, billValue, finalBill) {
+    const fetchCustomer = async () => {
+        const { data } = await supabase.from('users').select('*').eq('user_id', uid).single();
+        setCustomer(data);
+    };
 
-        if (type === 'spend') {
-
-
-            await supabase.from('transactions').insert([
-                {
-                    user_id: customer.user_id,
-                    offer_id: offerId,
-                    type: 'spend',
-                    amount: discount,
-                    bill_value: billValue,
-                    is_confirmed: true,
-                },
-            ]);
-
-
-
-        } else if (type === 'refer' || type === 'invite') {
-            const { data: offer } = await supabase
-                .from('offers')
-                .select('*')
-                .eq('id', offerId)
-                .single();
-
-            await supabase.from('transactions').insert([
-                {
-                    user_id: customer.user_id,
-                    offer_id: offerId,
-                    type: type,
-                    amount: -offer.value,
-                    bill_value: billValue,
-                    is_confirmed: true,
-                },
-            ]);
-
-            await supabase
-                .from('offers')
-                .update({ is_used: true })
-                .eq('id', offerId);
-
-            if (type === 'invite') {
-                await supabase
-                    .from('offers')
-                    .update({ is_unlocked: true })
-                    .eq('id', offer.referral_uid);
-
-                await supabase
-                    .from('users')
-                    .update({ is_activated: true })
-                    .eq('user_id', customer.user_id);
-            }
+    const fetchOfferName = async () => {
+        if (type === 'refer' || type === 'invite') {
+            const { data } = await supabase.from('offers').select('name').eq('id', offerId).single();
+            setOfferName(data.name);
         }
+    };
 
-        const discount = Math.min(customer?.balance || 0, billValue);
-        const final_bill = Math.max(0, billValue - discount);
-        const cashback = Number((final_bill * 0.1).toFixed(2));
+    const insertTransaction = async (transactionData) => {
+        await supabase.from('transactions').insert([transactionData]);
+    };
 
-        if (final_bill !== 0) {
-
-            // const discount = Math.min(customer?.balance || 0, billValue);
-            await supabase.from('transactions').insert([
-                {
-                    user_id: uid,
-                    offer_id: offerId,
-                    type: 'earn',
-                    amount: cashback,
-                    bill_value: final_bill,
-                    is_confirmed: true,
-                },
-            ]);
-
-
-        }
+    const updateBalance = async (newBalance) => {
         await supabase
             .from('users')
-            .update({ balance: (customer.balance || 0) + cashback - discount })
+            .update({ balance: newBalance })
             .eq('user_id', customer.user_id);
+    };
+
+    const handleConfirm = async (type, uid, offerId, billValue, finalBill) => {
+        let discount = Math.min(customer?.balance || 0, billValue);
+        let cashback = (finalBill !== 0) ? Number((finalBill * 0.1).toFixed(2)) : 0;
+
+        let newBalance = (customer?.balance || 0) + cashback - discount;
+
+        if (type === 'spend') {
+            await insertTransaction({
+                user_id: customer.user_id,
+                offer_id: offerId,
+                type: 'spend',
+                amount: -discount,
+                bill_value: billValue,
+                is_confirmed: true
+            });
+        } else if (type === 'refer' || type === 'invite') {
+            const { data: offer } = await supabase.from('offers').select('*').eq('id', offerId).single();
+            await insertTransaction({
+                user_id: customer.user_id,
+                offer_id: offerId,
+                type,
+                amount: offer.value,
+                bill_value: billValue,
+                is_confirmed: true
+            });
+        }
+
+        if (finalBill !== 0) {
+            await insertTransaction({
+                user_id: customer.user_id,
+                offer_id: offerId,
+                type: 'earn',
+                amount: cashback,
+                bill_value: finalBill,
+                is_confirmed: true
+            });
+        }
+
+        await updateBalance(newBalance);
 
         clearState();
         fetchTransactions();
     };
 
+    const clearState = () => {
+        setNumber(null);
+        setCode(null);
+        setCustomer(null);
+        setOfferName(null);
+    };
 
-
-    function clearState() {
-        setNumber(null)
-        setCode(null)
-        setCustomer(null)
-        setOfferName(null)
-    }
-
-    function handleCancel() {
-        clearState()
-    }
-
-
+    const handleCancel = () => {
+        clearState();
+    };
     return (
         <div className='bill-box'>
             <div className='wallet-balance'>
@@ -209,14 +184,7 @@ function Admin() {
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
-    const renderTransactionAmount = (transaction) => {
-        const formattedAmount = Math.abs(transaction.amount).toFixed(2);
-        return (
-            <span style={{ color: transaction.amount < 0 ? 'grey' : 'green', fontWeight: 'bold' }}>
-                {transaction.amount < 0 ? `- ₹${formattedAmount}` : `+ ₹${formattedAmount}`}
-            </span>
-        );
-    };
+
 
     async function fetchTransactions() {
         const { data, error } = await supabase
