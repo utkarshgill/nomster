@@ -293,7 +293,7 @@ function Home() {
 
 
             <p>C A S H B A C K</p>
-            <h1>{user?.balance && `₹${user?.balance?.toFixed(2)}`}</h1>
+            <h1>{user?.balance != undefined ? `₹${user?.balance?.toFixed(2)}` : `₹${(0).toFixed(2)}`}</h1>
 
             <QRCodeCanvas fgColor='#2B1317' value={user?.user_id + '&spend' + '%cardID'} includeMargin className='qr-code'></QRCodeCanvas>
 
