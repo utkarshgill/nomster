@@ -6,8 +6,7 @@ import { Scanner } from '@codesaursx/react-scanner';
 
 function BillBox({
     code, customer, number,
-    setCustomer, setCode, setNumber,
-    clearState, fetchTransactions
+    setCustomer, setCode, setNumber, fetchTransactions
 }) {
     const type = code.split('&')[1].split('%')[0];
     const uid = code.split('&')[0];
