@@ -247,7 +247,7 @@ function Home() {
         const imgUrl = card.type === 'invite' ? card.inviter?.avatar_url : card.ref?.avatar_url;
         const name = card.type === 'invite' ? card.inviter?.full_name : card.ref?.full_name;
 
-        name = name.split(' ')[0];
+        const firstName = name.split(' ')[0];
 
         return (
             <div key={index} className="offer-card" >
@@ -276,7 +276,7 @@ function Home() {
 
 
                             <div className='stack-h-fill'>
-                                <p>{card.type == 'invite' ? `Because ${name} invited you` : card.type === 'refer' ? `Because you invited ${name}` : !card.is_unlocked ? `Because you invited ${name} (Unlocks after their first order)` : `Because you invited ${name}`}</p>
+                                <p>{card.type == 'invite' ? `Because ${firstName} invited you` : card.type === 'refer' ? `Because you invited ${firstName}` : !card.is_unlocked ? `Because you invited ${firstName} (Unlocks after their first order)` : `Because you invited ${firstName}`}</p>
                                 <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" />
                             </div>
                         </label> : ''
@@ -293,7 +293,7 @@ function Home() {
 
 
             <p>C A S H B A C K</p>
-            <h1>{user?.balance !== null ? `₹${user?.balance?.toFixed(2)}` : ''}</h1>
+            <h1>{user?.balance ? `₹${user?.balance?.toFixed(2)}` : (0).toFixed(2)}</h1>
 
             <QRCodeCanvas fgColor='#2B1317' value={user?.user_id + '&spend' + '%cardID'} includeMargin className='qr-code'></QRCodeCanvas>
 
