@@ -188,6 +188,7 @@ function Admin() {
                 .from('transactions')
                 .select('*')
                 .eq('brand_id', specificUserId)
+                .in('type', ['spend', 'invite', 'refer'])
                 .order('created_at', { ascending: false });
 
             if (data) {
