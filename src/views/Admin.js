@@ -24,21 +24,28 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
         }
     }, [code, customer, number]);
 
-    async function handleConfirm(type, uid, offerId, billValue, finalBill) {
+    async function handleConfirm(type, uid, offerId, billValue) {
+        console.log(uid);
+        console.log(customer);
+        const discount = type === 'spend' ? Math.min(customer?.balance || 0, billValue) : 0;
+        const finalBill = Math.max(0, number - discount);
+        const cashback = Number((finalBill * 0.1).toFixed(2));
 
         if (type === 'spend') {
 
 
             await supabase.from('transactions').insert([
                 {
-                    user_id: customer.user_id,
-                    offer_id: offerId,
+                    user_id: uid,
+                    offer_id: offerId == 'cardID' ? null : offerId,
                     type: 'spend',
                     amount: discount,
                     bill_value: billValue,
                     is_confirmed: true,
                 },
-            ]);
+            ]).select();
+
+
 
 
 
@@ -54,7 +61,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
                     user_id: customer.user_id,
                     offer_id: offerId,
                     type: type,
-                    amount: -offer.value,
+                    amount: -(offer.value),
                     bill_value: billValue,
                     is_confirmed: true,
                 },
@@ -78,20 +85,17 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             }
         }
 
-        const discount = type === 'spend' ? Math.min(customer?.balance || 0, billValue) : 0;
-        const final_bill = Math.max(0, billValue - discount);
-        const cashback = Number((final_bill * 0.1).toFixed(2));
 
-        if (final_bill !== 0) {
+        if (finalBill !== 0) {
 
             // const discount = Math.min(customer?.balance || 0, billValue);
             await supabase.from('transactions').insert([
                 {
                     user_id: uid,
-                    offer_id: offerId,
+                    offer_id: offerId == 'cardID' ? null : offerId,
                     type: 'earn',
                     amount: cashback,
-                    bill_value: final_bill,
+                    bill_value: finalBill,
                     is_confirmed: true,
                 },
             ]);
@@ -135,7 +139,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
 
                 <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
             </div>
-            {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
+            {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
             {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
             {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
             <div className='wallet-balance'>
@@ -144,7 +148,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
             </div>
             <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
                 <button className='secondary-button' onClick={handleCancel}>Cancel</button>
-                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number, finalBill)}>Confirm</button>
+                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number)}>Confirm</button>
             </div>
         </div>
     );
@@ -169,11 +173,34 @@ function Admin() {
 
         const subscription = supabase
             .channel('any')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchTransactions)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
+                console.log('Change received!', payload)
+                fetchTransactions();
+            })
             .subscribe();
 
         return () => subscription.unsubscribe();
     }, []);
+
+    async function fetchTransactions() {
+        try {
+            const { data, error } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('brand_id', specificUserId)
+                .order('created_at', { ascending: false });
+
+            if (data) {
+                setTransactions(data);
+            }
+
+            if (error) {
+                console.error('Error fetching transactions:', error);
+            }
+        } catch (error) {
+            console.error('Unexpected error:', error);
+        }
+    }
 
     const toggleScanner = () => {
         setScannerVisible(!isScannerVisible);
@@ -219,21 +246,6 @@ function Admin() {
 
 
 
-    async function fetchTransactions() {
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('brand_id', specificUserId)
-            .in('type', ['spend', 'invite', 'refer'])
-            .order('created_at', { ascending: false });
-
-        if (data) {
-            setTransactions(data);
-        }
-        if (error) {
-            console.error('Error fetching transactions:', error);
-        }
-    }
 
 
 

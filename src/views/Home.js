@@ -324,7 +324,7 @@ function Home() {
                                     {type == 'earn' ? '₹' : type == 'refer' || type == 'invite' ? '🥤' : '₹'}</p>
                             </div>
                             <div>
-                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}> {type == 'spend' ? `Saved ₹${amount} on bill` : type == 'earn' ? `Earned ₹${amount} cashback` : (type == 'invite' || type == 'refer') ? `You got a FREE drink` : ''}</p>
+                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}> {type == 'spend' ? `Saved ₹${amount.toFixed(2)} on bill` : type == 'earn' ? `Earned ₹${amount.toFixed(2)} cashback` : (type == 'invite' || type == 'refer') ? `You got a FREE drink` : ''}</p>
                                 <p style={{ color: 'gray' }}>{formatDate(created_at)}</p>
                             </div>
                         </div>
