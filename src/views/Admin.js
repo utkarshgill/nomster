@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode.react';
 import { Scanner } from '@codesaursx/react-scanner';
 
-function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions }) {
+function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions, offerName }) {
     const type = code.split('&')[1].split('%')[0];
     const uid = code.split('&')[0];
     const offerId = code.split('%')[1];
-    const [offerName, setOfferName] = useState('');
     let discount = type === 'spend' ? Math.min(customer?.balance, number) : 0;
     let finalBill = Math.max(0, number - discount);
 
@@ -19,7 +18,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
 
         if (type === 'refer' || type === 'invite') {
             supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
-                setOfferName(data.name);
+                offerName = data.name;
             });
         }
     }, [code, customer, number]);
@@ -259,13 +258,33 @@ function Admin() {
             {isScannerVisible ? (
                 <div className="scanner-modal">
                     <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
-                    <Scanner width="100%" height="100%" onUpdate={(e, data) => data && (setCode(data.getText()), toggleScanner())} />
+                    <Scanner width="100%" height="100%" onUpdate={(e, data) => {
+
+                        if (data) {
+                            setCode(data.getText());
+                            toggleScanner();
+
+                            const type = code.split('&')[1].split('%')[0];
+                            const uid = code.split('&')[0];
+                            const offerId = code.split('%')[1];
+
+                            supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
+                                setCustomer(data);
+                            });
+
+                            if (type === 'refer' || type === 'invite') {
+                                supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
+                                    setOfferName(data.name);
+                                });
+                            }
+                        }
+                    }} />
                 </div>
             ) : ''}
 
             {!code && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
 
-            {code ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} /> : ''}
+            {code && customer ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} /> : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
