@@ -284,7 +284,7 @@ function Admin() {
 
             {!code && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
 
-            {code && customer ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} setOfferName={setOfferName} /> : ''}
+            {code ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} setOfferName={setOfferName} /> : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
