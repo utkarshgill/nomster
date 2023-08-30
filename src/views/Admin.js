@@ -258,7 +258,7 @@ function Admin() {
             {isScannerVisible ? (
                 <div className="scanner-modal">
                     <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
-                    <Scanner width="100%" height="100%" onUpdate={(e, data) => {
+                    <Scanner width="100%" height="100%" onUpdate={async (e, data) => {
 
                         if (data) {
                             setCode(data.getText());
@@ -268,12 +268,12 @@ function Admin() {
                             const uid = code.split('&')[0];
                             const offerId = code.split('%')[1];
 
-                            supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
+                            await supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
                                 setCustomer(data);
                             });
 
                             if (type === 'refer' || type === 'invite') {
-                                supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
+                                await supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
                                     setOfferName(data.name);
                                 });
                             }
