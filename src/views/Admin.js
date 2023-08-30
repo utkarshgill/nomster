@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode.react';
 import { Scanner } from '@codesaursx/react-scanner';
 
-function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions, offerName }) {
+function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions, offerName, setOfferName }) {
     const type = code.split('&')[1].split('%')[0];
     const uid = code.split('&')[0];
     const offerId = code.split('%')[1];
@@ -284,7 +284,7 @@ function Admin() {
 
             {!code && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
 
-            {code && customer ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} /> : ''}
+            {code && customer ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} setOfferName={setOfferName} /> : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
