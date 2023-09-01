@@ -21,7 +21,7 @@ function Admin() {
     const uid = code.split('&')[0];
     const offerId = code.split('%')[1];
 
-    const discount = type === 'spend' ? Math.min(customer?.balance || 0, number) : 0;
+    const discount = type === 'spend' ? Math.min(customer?.balance ?? 0, number) : 0;
     const finalBill = Math.max(0, number - discount);
     const cashback = Number((finalBill * 0.1).toFixed(2));
 
@@ -29,7 +29,11 @@ function Admin() {
         console.log(uid);
         if (uid) {
             supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
-                setCustomer(data);
+                if (data) {
+                    setCustomer(data);
+                } else {
+                    console.error('Failed to fetch user data');
+                }
             })
         }
         ;
@@ -37,13 +41,18 @@ function Admin() {
 
         if (type === 'refer' || type === 'invite') {
             supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
-                offerName = data.name;
+                setOfferName(data.name);
             });
         }
 
     }, [code, customer, number]);
 
     async function handleConfirm(type, uid, offerId, billValue) {
+        if (!customer) {
+            console.error('Customer is null');
+            return;
+        }
+
         console.log(uid);
         console.log(customer);
 
@@ -148,9 +157,9 @@ function Admin() {
     function handleCancel() {
         clearState()
     }
-    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
+    // const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-    // const specificUserId = '5c7c56cc-2c8c-42a2-84be-438805223134';
+    const specificUserId = 'ea93bdff-fa4c-45b2-80f9-43030ae28795';
 
     useEffect(() => {
         checkUser();
@@ -296,7 +305,7 @@ function Admin() {
 
                         <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
                     </div>
-                    {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
+                    {type == 'spend' && customer && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
                     {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
                     {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
                     <div className='wallet-balance'>
