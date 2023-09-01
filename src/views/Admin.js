@@ -142,7 +142,7 @@ function Admin() {
 
 
     function clearState() {
-        setNumber(null)
+        setNumber(0)
         setCode('&%')
         setCustomer(null)
         setOfferName(null)
