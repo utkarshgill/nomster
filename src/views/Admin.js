@@ -26,15 +26,24 @@ function Admin() {
     const cashback = Number((finalBill * 0.1).toFixed(2));
 
     useEffect(() => {
-        supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
-            setCustomer(data);
-        });
+        console.log('HERE1');
+        console.log(uid);
+        if (uid) {
+            supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
+                setCustomer(data);
+            })
+        }
+        ;
+
+        console.log('HERE2');
 
         if (type === 'refer' || type === 'invite') {
             supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
                 offerName = data.name;
             });
         }
+
+        console.log('HEREX');
     }, [code, customer, number]);
 
     async function handleConfirm(type, uid, offerId, billValue) {
@@ -142,9 +151,9 @@ function Admin() {
     function handleCancel() {
         clearState()
     }
-    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
+    // const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-    // const specificUserId = '12f5ebba-abc3-4c12-9aee-cc7fd96fc817';
+    const specificUserId = '12f5ebba-abc3-4c12-9aee-cc7fd96fc817';
 
     useEffect(() => {
         checkUser();
@@ -189,8 +198,8 @@ function Admin() {
 
     async function checkUser() {
         try {
-            const { data, error } = await supabase.auth.getUser();
-            if (!data || data.user.id !== specificUserId) {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user.id !== specificUserId) {
                 navigate('/');
             }
         } catch (error) {
@@ -200,24 +209,42 @@ function Admin() {
 
     async function fetchUsers() {
         try {
-            const { data: usersData, error } = await supabase
-                .from('users')
-                .select('*');
 
-            if (usersData) {
-                const usersMap = {};
-                usersData.forEach((user) => {
-                    usersMap[user.user_id] = user;
-                });
-                setUsersMap(usersMap);
-            }
-            if (error) {
-                console.error('Error fetching users:', error);
+            const { data: { user } } = await supabase.auth.getUser() // Get the current user session
+            console.log('User:', user);  // Debug Point 1: Log the user to ensure it's not null
+
+            if (user) {
+                console.log('HERE3');
+
+                const { data, error, status } = await supabase
+                    .from('users')
+                    .select();
+
+                console.log('HTTP Status:', status);  // Debug Point 2: Log HTTP Status
+                console.log('Supabase Error:', error);  // Debug Point 2: Log any errors
+
+                console.log('HERE4');
+
+                if (data) {
+                    console.log(data);
+
+                    const usersMap = {};  // Initialize user map
+                    data.forEach((user) => {
+                        usersMap[user.user_id] = user;
+                    });
+
+                    setUsersMap(usersMap);  // Assume this is a React state setter
+                }
+
+                if (error) {
+                    console.error('Error fetching users:', error);
+                }
             }
         } catch (error) {
-            console.error('Error fetching users:', error);
+            console.error('Caught Exception:', error);
         }
     }
+
 
 
     const formatDate = (dateString) => {
@@ -233,9 +260,13 @@ function Admin() {
         if (data) {
             setCode(data.getText());
             toggleScanner();
-            await supabase.from('users').select('*').eq('user_id', uid).single().then(({ userData }) => {
-                setCustomer(userData);
-            });
+            const uid = data.getText().split('&')[0];
+            if (uid) {
+                await supabase.from('users').select('*').eq('user_id', uid).single().then(({ userData }) => {
+                    setCustomer(userData);
+                });
+            }
+
 
             if (type === 'refer' || type === 'invite') {
                 await supabase.from('offers').select('name').eq('id', offerId).single().then(({ offerData }) => {
