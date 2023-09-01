@@ -45,7 +45,7 @@ function Admin() {
             });
         }
 
-    }, [code, customer, number]);
+    }, [code]);
 
     async function handleConfirm(type, uid, offerId, billValue) {
         if (!customer) {
