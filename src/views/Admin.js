@@ -4,12 +4,26 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode.react';
 import { Scanner } from '@codesaursx/react-scanner';
 
-function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clearState, fetchTransactions, offerName, setOfferName }) {
+
+
+function Admin() {
+    const [transactions, setTransactions] = useState([]);
+    const [usersMap, setUsersMap] = useState({});
+    const [number, setNumber] = useState(0.00);
+    const navigate = useNavigate();
+    const [code, setCode] = useState('&%');
+    const [customer, setCustomer] = useState(null);
+    const [offerName, setOfferName] = useState('');
+    const [isScannerVisible, setScannerVisible] = useState(false);
+
+    //bill box related state
     const type = code.split('&')[1].split('%')[0];
     const uid = code.split('&')[0];
     const offerId = code.split('%')[1];
-    let discount = type === 'spend' ? Math.min(customer?.balance, number) : 0;
-    let finalBill = Math.max(0, number - discount);
+
+    const discount = type === 'spend' ? Math.min(customer?.balance || 0, number) : 0;
+    const finalBill = Math.max(0, number - discount);
+    const cashback = Number((finalBill * 0.1).toFixed(2));
 
     useEffect(() => {
         supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
@@ -26,9 +40,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
     async function handleConfirm(type, uid, offerId, billValue) {
         console.log(uid);
         console.log(customer);
-        const discount = type === 'spend' ? Math.min(customer?.balance || 0, billValue) : 0;
-        const finalBill = Math.max(0, number - discount);
-        const cashback = Number((finalBill * 0.1).toFixed(2));
+
 
         if (type === 'spend') {
 
@@ -122,7 +134,7 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
 
     function clearState() {
         setNumber(null)
-        setCode(null)
+        setCode('&%')
         setCustomer(null)
         setOfferName(null)
     }
@@ -130,40 +142,9 @@ function BillBox({ code, customer, number, setCustomer, setCode, setNumber, clea
     function handleCancel() {
         clearState()
     }
+    // const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-
-    return (
-        <div className='bill-box'>
-            <div className='wallet-balance'>
-
-                <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
-            </div>
-            {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
-            {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
-            {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
-            <div className='wallet-balance'>
-                <h1>Final Bill</h1>
-                <h1>₹{finalBill.toFixed(2)}</h1>
-            </div>
-            <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
-                <button className='secondary-button' onClick={handleCancel}>Cancel</button>
-                <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number)}>Confirm</button>
-            </div>
-        </div>
-    );
-}
-
-
-function Admin() {
-    const [transactions, setTransactions] = useState([]);
-    const [usersMap, setUsersMap] = useState({});
-    const [number, setNumber] = useState(0.00);
-    const navigate = useNavigate();
-    const [code, setCode] = useState('');
-    const [customer, setCustomer] = useState(null);
-    const [offerName, setOfferName] = useState('');
-    const [isScannerVisible, setScannerVisible] = useState(false);
-    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
+    const specificUserId = '12f5ebba-abc3-4c12-9aee-cc7fd96fc817';
 
     useEffect(() => {
         checkUser();
@@ -246,11 +227,29 @@ function Admin() {
 
 
 
+    const handleScan = async (e, data) => {
 
 
+        if (data) {
+            setCode(data.getText());
+            toggleScanner();
+            await supabase.from('users').select('*').eq('user_id', uid).single().then(({ userData }) => {
+                setCustomer(userData);
+            });
+
+            if (type === 'refer' || type === 'invite') {
+                await supabase.from('offers').select('name').eq('id', offerId).single().then(({ offerData }) => {
+                    setOfferName(offerData.name);
+                });
+            }
+
+        }
+
+    }
 
 
     return (
+
         <div className='styled-container'>
 
 
@@ -258,33 +257,33 @@ function Admin() {
             {isScannerVisible ? (
                 <div className="scanner-modal">
                     <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
-                    <Scanner width="100%" height="100%" onUpdate={async (e, data) => {
-
-                        if (data) {
-                            setCode(data.getText());
-                            toggleScanner();
-
-                            const type = code.split('&')[1].split('%')[0];
-                            const uid = code.split('&')[0];
-                            const offerId = code.split('%')[1];
-
-                            await supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
-                                setCustomer(data);
-                            });
-
-                            if (type === 'refer' || type === 'invite') {
-                                await supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
-                                    setOfferName(data.name);
-                                });
-                            }
-                        }
-                    }} />
+                    <Scanner width="100%" height="100%" onUpdate={handleScan} />
                 </div>
             ) : ''}
 
-            {!code && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
+            {code == '&%' && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
 
-            {code ? <BillBox code={code} customer={customer} number={number} setNumber={setNumber} setCustomer={setCustomer} setCode={setCode} fetchTransactions={fetchTransactions} offerName={offerName} setOfferName={setOfferName} /> : ''}
+            {code != '&%' ?
+
+                <div className='bill-box'>
+                    <div className='wallet-balance'>
+
+                        <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
+                    </div>
+                    {type == 'spend' && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
+                    {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
+                    {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
+                    <div className='wallet-balance'>
+                        <h1>Final Bill</h1>
+                        <h1>₹{finalBill.toFixed(2)}</h1>
+                    </div>
+                    <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
+                        <button className='secondary-button' onClick={handleCancel}>Cancel</button>
+                        <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number)}>Confirm</button>
+                    </div>
+                </div>
+
+                : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
