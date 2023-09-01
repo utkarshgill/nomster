@@ -26,7 +26,6 @@ function Admin() {
     const cashback = Number((finalBill * 0.1).toFixed(2));
 
     useEffect(() => {
-        console.log('HERE1');
         console.log(uid);
         if (uid) {
             supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
@@ -35,7 +34,6 @@ function Admin() {
         }
         ;
 
-        console.log('HERE2');
 
         if (type === 'refer' || type === 'invite') {
             supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
@@ -43,7 +41,6 @@ function Admin() {
             });
         }
 
-        console.log('HEREX');
     }, [code, customer, number]);
 
     async function handleConfirm(type, uid, offerId, billValue) {
@@ -153,7 +150,7 @@ function Admin() {
     }
     const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-    // const specificUserId = '12f5ebba-abc3-4c12-9aee-cc7fd96fc817';
+    // const specificUserId = '5c7c56cc-2c8c-42a2-84be-438805223134';
 
     useEffect(() => {
         checkUser();
@@ -214,7 +211,6 @@ function Admin() {
             console.log('User:', user);  // Debug Point 1: Log the user to ensure it's not null
 
             if (user) {
-                console.log('HERE3');
 
                 const { data, error, status } = await supabase
                     .from('users')
@@ -223,7 +219,6 @@ function Admin() {
                 console.log('HTTP Status:', status);  // Debug Point 2: Log HTTP Status
                 console.log('Supabase Error:', error);  // Debug Point 2: Log any errors
 
-                console.log('HERE4');
 
                 if (data) {
                     console.log(data);
