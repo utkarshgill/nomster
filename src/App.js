@@ -26,13 +26,16 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
 
-
+ 
 
 
   return (
     <StatusProvider>
       <BrowserRouter basename={process.env.PUBLIC_URL}>
+     
         <Routes>
+
+         
           <Route exact path='/' element={<Login />} />
           <Route exact path='' element={<Navigate to="/" />} />
           <Route path='/home' element={<Home />} />

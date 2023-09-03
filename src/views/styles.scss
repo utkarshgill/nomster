@@ -26,7 +26,7 @@ h3 {
     flex-direction: column;
     align-items: center;
     margin: 0 auto;
-    padding: 40px 10px;
+    padding: 20px 10px;
     max-width: 400px;
     gap: 32px;
 }
@@ -34,19 +34,16 @@ h3 {
 .secondary-button {
     cursor: pointer;
     width: fit-content;
-    min-width: 100px;
     height: 44px;
     font-size: 16px;
     padding: 0 20px;
     margin: 0;
     border: none;
     border-radius: 100px;
-
+    white-space: nowrap;
     background-color: #fff;
     color: black;
     font-weight: bold;
-    border: 2px solid black;
-    box-shadow: 0px 5px 0px 0px #000;
 }
 
 h2 {
@@ -57,9 +54,7 @@ p {
     margin: 0;
 }
 
-.bill-box p {
-    margin: 10px 0;
-}
+
 
 
 
@@ -74,11 +69,30 @@ code {
     color: white;
 }
 
+.footer {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+}
+
 .apply-button {
     height: 32px;
     font-size: 14px;
     min-width: 0;
     width: fit-content;
+}
+
+.offer-card {
+
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
 }
 
 .applied-offer {
@@ -96,6 +110,12 @@ code {
     border: 2px solid #000;
 }
 
+
+.claim-box .scanner,
+.bill-box .scanner {
+    width: 100%;
+}
+
 .scanner {
     cursor: pointer;
     width: fit-content;
@@ -108,10 +128,8 @@ code {
     border-radius: 100px;
 
     background-color: #ffdd8e;
-    color: black;
+    color: #000;
     font-weight: bold;
-    border: 2px solid black;
-    box-shadow: 0px 5px 0px 0px #000;
 
 
 }
@@ -142,6 +160,8 @@ code {
 
 .navbar {
     width: 100%;
+    padding: 20px;
+    background-color: #ffdd8e;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
@@ -204,31 +224,104 @@ input[type="number"] {
 }
 
 a {
-    cursor: pointer;
-    text-decoration: none;
     color: #000;
-    margin: 0 8px;
+    cursor: pointer;
+    text-decoration: underline;
+    margin: 0;
+}
+
+li {
+    border-bottom: 1px solid #eee;
+}
+
+.claim-box {
+    box-sizing: border-box;
+    border-radius: 24px;
+    width: 100%;
+    margin-bottom: 20px;
+    // box-shadow: 0px 8px 24px 0 rgba($color: #000, $alpha: .1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    height: fit-content;
+
+}
+
+.claim-box p {
+    margin: 0;
 }
 
 .bill-input {
-    text-align: right;
-    width: 100%;
-    font-size: 16px;
+    text-align: center;
     box-sizing: border-box;
-    margin-bottom: 10px;
+    width: 100%;
+    font-size: 18px;
     padding: 0 12px;
     height: 44px;
-    border: 2px solid #000;
+    border: 2px solid;
     outline: none;
     background-color: #fff;
     border-radius: 8px;
 }
+
+
+
+
+.input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+
+    /* adjust as needed */
+}
+
+.bill-input {
+    width: 100%;
+    text-align: right;
+}
+
+input::-webkit-input-placeholder {
+    text-align: right;
+}
+
+input::-moz-placeholder {
+    text-align: right;
+}
+
+input:-ms-input-placeholder {
+    text-align: right;
+}
+
+input::placeholder {
+    text-align: right;
+}
+
+label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    transition: left 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    /* this ensures that the label does not interfere with the input's click event */
+}
+
+label.active {
+    left: 12px;
+    transform: translateY(-50%);
+}
+
+
+//------
+
 
 .profile-pic {
     width: 48px;
     height: 48px;
     border-radius: 100px;
 }
+
 
 
 .horizontal-scroll-container {
@@ -259,24 +352,24 @@ a {
 
 .hero-card {
     width: 100%;
-    aspect-ratio: 1/1.2;
     box-sizing: border-box;
     display: flex;
+    height: fit-content;
+    gap: 10px;
     flex-direction: column;
-    align-items: center;
-    border: 2px dashed #000;
+    // align-items: center;
     justify-content: space-evenly;
-    padding: 20px;
-    background-color: #fff;
+    // padding: 32px;
+    // background-color: #fff;
 
     margin: 0;
-    border-radius: 28px;
 }
 
 .wallet-balance {
     box-sizing: border-box;
     width: 100%;
     display: flex;
+    padding: 0 12px;
     justify-content: space-between;
     margin: 10px 0 0 0;
 }
@@ -293,29 +386,20 @@ a {
     margin: 0;
 }
 
-.bill-box h1 {
-    margin-bottom: 10px;
-}
+
 
 .bill-box {
     background-color: white;
-    padding: 24px;
-    border-style: solid;
+    gap: 12px;
+    padding: 24px 0;
     border-radius: 22px;
     box-sizing: border-box;
-    border-width: 2px;
     width: 100%;
     height: auto;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: space-between;
-
-}
-
-.offer-card {
-    width: 100%;
-    box-sizing: border-box;
 
 }
 
@@ -335,53 +419,56 @@ a {
 }
 
 
+.carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    /* Adjust this value for spacing between cards */
+
+    width: 100%;
+}
+
+
+
+
+
+.applied-state {
+    background-color: #000;
+    color: #fff;
+
+    /* You can change this to a different color to indicate an applied state */
+}
+
+
+
+button:disabled {
+
+    background-color: lightgray;
+}
 
 .balance-card {
-    background-color: #ffd37c;
-    padding: 32px 80px;
-    aspect-ratio: 1/1.2;
-    gap: 40px;
-    border: 2px solid #462B2F;
-    border-radius: 16px;
     width: 100%;
-    height: auto;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 16px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: space-between;
 }
 
-.balance-card p {
-    text-align: center;
+.label {
+    text-align: left;
     font-weight: 500;
+    opacity: 0.6;
 }
 
 .balance-card h1 {
     text-align: center;
     margin: 0;
-    font-size: 48px;
-    color: #462B2F;
-    font-weight: bold;
 }
 
-
-
-.hero-card .secondary-button {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.qr-code {
-    // border: 2px solid #462B2F;
-    opacity: 0.95;
-    width: 100% !important;
-    aspect-ratio: 1 !important;
-    height: auto !important;
-    border-radius: 12px;
-    // background-color: #fff;
-    // border-radius: 12px;
-    // box-shadow: 1px;
-    // display: flex;
-    // justify-content: center;
-    // align-items: center;
+h1 {
+    font-weight: normal;
 }

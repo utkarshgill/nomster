@@ -17,127 +17,108 @@ function Admin() {
     const [isScannerVisible, setScannerVisible] = useState(false);
 
     //bill box related state
-    const type = code.split('&')[1].split('%')[0];
-    const uid = code.split('&')[0];
-    const offerId = code.split('%')[1];
+    // const type = code.split('&')[1].split('%')[0];
+    // const uid = code.split('&')[0];
+    // const offerId = code.split('%')[1];
 
-    const discount = type === 'spend' ? Math.min(customer?.balance ?? 0, number) : 0;
-    const finalBill = Math.max(0, number - discount);
-    const cashback = Number((finalBill * 0.1).toFixed(2));
+    // const discount = type === 'spend' ? Math.min(customer?.balance ?? 0, number) : 0;
+    // const finalBill = Math.max(0, number - discount);
+    // const cashback = Number((finalBill * 0.1).toFixed(2));
 
-    useEffect(() => {
-        console.log(uid);
-        if (uid) {
-            supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
-                if (data) {
-                    setCustomer(data);
-                } else {
-                    console.error('Failed to fetch user data');
-                }
-            })
-        }
-        ;
-
-
-        if (type === 'refer' || type === 'invite') {
-            supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
-                setOfferName(data.name);
-            });
-        }
-
-    }, [code]);
-
-    async function handleConfirm(type, uid, offerId, billValue) {
-        if (!customer) {
-            console.error('Customer is null');
-            return;
-        }
-
-        console.log(uid);
-        console.log(customer);
+    // useEffect(() => {
+    //     console.log(uid);
+    //     if (uid) {
+    //         supabase.from('users').select('*').eq('user_id', uid).single().then(({ data }) => {
+    //             if (data) {
+    //                 setCustomer(data);
+    //             } else {
+    //                 console.error('Failed to fetch user data');
+    //             }
+    //         })
+    //     }
+    //     ;
 
 
-        if (type === 'spend') {
+    //     if (type === 'refer' || type === 'invite') {
+    //         supabase.from('offers').select('name').eq('id', offerId).single().then(({ data }) => {
+    //             setOfferName(data.name);
+    //         });
+    //     }
 
+    // }, [code]);
 
-            await supabase.from('transactions').insert([
-                {
-                    user_id: uid,
-                    offer_id: offerId == 'cardID' ? null : offerId,
-                    type: 'spend',
-                    amount: discount,
-                    bill_value: billValue,
-                    is_confirmed: true,
-                },
-            ]).select();
+    async function handleConfirm(transaction) {
+        // if (!customer) {
+        //     console.error('Customer is null');
+        //     return;
+        // }
+        const finalBill = transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0);
+        // console.log(uid);
+        console.log('here');
+
+        const { data, error } = await supabase.from('transactions').update(
+            {
+                is_confirmed: true,
+            },
+        ).eq('id', transaction.id).select();
+
+        console.log(data);
 
 
 
 
 
-        } else if (type === 'refer' || type === 'invite') {
-            const { data: offer } = await supabase
-                .from('offers')
-                .select('*')
-                .eq('id', offerId)
-                .single();
+        if (transaction.type === 'refer') {
 
-            await supabase.from('transactions').insert([
-                {
-                    user_id: customer.user_id,
-                    offer_id: offerId,
-                    type: type,
-                    amount: -(offer.value),
-                    bill_value: billValue,
-                    is_confirmed: true,
-                },
-            ]);
+
+
 
             await supabase
                 .from('offers')
                 .update({ is_used: true })
-                .eq('id', offerId);
+                .eq('id', transaction.offer_id);
 
-            if (type === 'invite') {
-                await supabase
-                    .from('offers')
-                    .update({ is_unlocked: true })
-                    .eq('id', offer.referral_uid);
 
-                await supabase
-                    .from('users')
-                    .update({ is_activated: true })
-                    .eq('user_id', customer.user_id);
-            }
+
+
+        } else if (transaction.type === 'invite') {
+            await supabase
+                .from('offers')
+                .update({ is_used: true })
+                .eq('id', transaction.offer_id);
+
+            await supabase
+                .from('offers')
+                .update({ is_unlocked: true })
+                .eq('id', transaction.ref_offer_id)
+
+
+
+
+
+
         }
 
 
-        if (finalBill !== 0) {
-
-            // const discount = Math.min(customer?.balance || 0, billValue);
-            await supabase.from('transactions').insert([
-                {
-                    user_id: uid,
-                    offer_id: offerId == 'cardID' ? null : offerId,
-                    type: 'earn',
-                    amount: cashback,
-                    bill_value: finalBill,
-                    is_confirmed: true,
-                },
-            ]);
+        if (finalBill) {
 
             await supabase
                 .from('users')
                 .update({ is_activated: true })
-                .eq('user_id', customer.user_id);
+                .eq('user_id', transaction.user_id);
+
 
 
         }
 
-        await supabase
-            .from('users')
-            .update({ balance: (customer.balance || 0) + cashback - discount })
-            .eq('user_id', customer.user_id);
+
+        const deltaBal = (0.1 * (finalBill) - (transaction.type == 'spend' ? transaction.amount : 0)).toFixed(2)
+        await supabase.rpc('update_balance', { uid: transaction.user_id, change: deltaBal })
+
+        // await supabase
+        //     .from('users')
+        //     .update({ balance: (customer.balance || 0) + cashback - discount })
+        //     .eq('user_id', customer.user_id);
 
 
 
@@ -154,12 +135,13 @@ function Admin() {
         setOfferName(null)
     }
 
-    function handleCancel() {
+    async function handleCancel(transaction) {
         clearState()
+        await supabase.from('transactions').update({ status: 'rejected' }).eq('id', transaction.id);
     }
-    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
+    // const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-    // const specificUserId = 'ea93bdff-fa4c-45b2-80f9-43030ae28795';
+    const specificUserId = 'b41a7008-c0fd-419a-96e7-e9e0e8efb5c5';
 
     useEffect(() => {
         checkUser();
@@ -182,8 +164,7 @@ function Admin() {
             const { data, error } = await supabase
                 .from('transactions')
                 .select('*')
-                .eq('brand_id', specificUserId)
-                .in('type', ['spend', 'invite', 'refer'])
+                .eq('brand_id', '5bc347c2-3490-40e7-84c2-f941df26157e')
                 .order('created_at', { ascending: false });
 
             if (data) {
@@ -252,100 +233,82 @@ function Admin() {
 
 
     const formatDate = (dateString) => {
-        const options = { day: 'numeric', month: 'short' };
-        return new Date(dateString).toLocaleDateString(undefined, options);
+        const options = {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        return new Date(dateString).toLocaleString(undefined, options);
     };
 
 
 
-    const handleScan = async (e, data) => {
 
-
-        if (data) {
-            setCode(data.getText());
-            toggleScanner();
-            const uid = data.getText().split('&')[0];
-            if (uid) {
-                await supabase.from('users').select('*').eq('user_id', uid).single().then(({ userData }) => {
-                    setCustomer(userData);
-                });
-            }
-
-
-            if (type === 'refer' || type === 'invite') {
-                await supabase.from('offers').select('name').eq('id', offerId).single().then(({ offerData }) => {
-                    setOfferName(offerData.name);
-                });
-            }
-
-        }
-
-    }
 
 
     return (
 
         <div className='styled-container'>
+            <h1 style={{ textAlign: 'left', width: '100%' }}>Transactions</h1>
 
 
 
-            {isScannerVisible ? (
-                <div className="scanner-modal">
-                    <button className='secondary-button close-button' onClick={toggleScanner}>Cancel</button>
-                    <Scanner width="100%" height="100%" onUpdate={handleScan} />
-                </div>
-            ) : ''}
 
-            {code == '&%' && !isScannerVisible && <div className='wallet-balance' style={{ alignItems: 'center' }}><h2> Transaction history </h2><button className='secondary-button' onClick={toggleScanner}>Scan</button></div>}
-
-            {code != '&%' ?
-
-                <div className='bill-box'>
-                    <div className='wallet-balance'>
-
-                        <input className='bill-input' placeholder='Enter bill amount' type="number" value={number ? number : ''} onChange={e => setNumber(e.target.value)} />
-                    </div>
-                    {type == 'spend' && customer && <div className='wallet-balance'><p>{`Discount from balance (₹${customer?.balance.toFixed(2)})`}</p><p>-₹{Math.abs(discount.toFixed(2))}</p></div>}
-                    {type === 'invite' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
-                    {type === 'refer' && <div className='wallet-balance'><p>Offers Applied</p><p>{`${offerName} (${type})`}</p></div>}
-                    <div className='wallet-balance'>
-                        <h1>Final Bill</h1>
-                        <h1>₹{finalBill.toFixed(2)}</h1>
-                    </div>
-                    <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
-                        <button className='secondary-button' onClick={handleCancel}>Cancel</button>
-                        <button className='scanner' disabled={!number} onClick={() => handleConfirm(type, uid, offerId, number)}>Confirm</button>
-                    </div>
-                </div>
-
-                : ''}
 
             <ul className='list'>
                 {transactions.map((transaction) => (
                     <li key={transaction.id} style={{ listStyleType: 'none' }}>
-                        {<div className='list-item' >
-                            <div className='wallet-balance'>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                    {usersMap[transaction.user_id] && (
-                                        <>
-                                            <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
-                                                <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
-                                                    {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
-                                            </div> <div>
-                                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name + ` (${transaction.type})`}</p>
-                                                <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
-                                            </div>
-                                        </>
-                                    )}
+                        {!transaction.is_confirmed ?
+                            <div className='bill-box' >
+                                <div className='wallet-balance'>
+                                    <h3>Total bill</h3>
+                                    <h3>{`₹${transaction.bill_value}`}</h3>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value}`}</p>
-                                    <p>{` ﹣₹${Math.abs(transaction.amount)}`}</p>
+                                {transaction.type == 'spend' ? <div className='wallet-balance'><p>{`Discount from balance`}</p><p>-₹{transaction.amount.toFixed(2)}</p></div> : ''}
+                                {transaction.type == 'refer' || transaction.type == 'invite' ? <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type} (worth ₹${Math.abs(transaction.amount)})`}</p></div> : ''}
 
+                                <div className='wallet-balance'>
+                                    <h1>To Pay</h1>
+                                    <h1>₹{(transaction.type == 'spend' ? (transaction.bill_value - transaction.amount) : transaction.bill_value).toFixed(2)}</h1>
                                 </div>
+                                <div className='wallet-balance'><p>{`Cashback`}</p><p>₹{((transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)) * .1).toFixed(2)}</p></div>
 
+                                <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
+                                    {/* <button className='secondary-button' onClick={() => handleCancel(transaction)}>Cancel</button> */}
+                                    <button className='scanner' onClick={() => handleConfirm(transaction)}>Confirm</button>
+                                </div>
                             </div>
-                        </div>}
+
+                            :
+
+
+
+                            <div className='list-item' >
+                                <div className='wallet-balance'>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        {usersMap[transaction.user_id] && (
+                                            <>
+                                                <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
+                                                    <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
+                                                        {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
+                                                </div> <div>
+                                                    <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name}</p>
+                                                    <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value.toFixed(2)}`}</p>
+                                        <p>{`(${transaction.type}) ﹣₹${transaction.amount.toFixed(2)}`}</p>
+
+                                        <p>{`₹${(0.1 * (transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0))).toFixed(2)} cashback`}</p>
+                                    </div>
+
+                                </div>
+                            </div>}
                     </li>
                 ))}
             </ul>

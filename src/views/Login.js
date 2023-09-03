@@ -146,8 +146,9 @@ function Login() {
             await supabase.from('offers').insert([
               {
                 user_id: user?.id,
-                type: offerData.type,
-                referral_uid: data.id,
+                type: 'invite',
+                ref_offer_id: data.id,
+                referral_uid: storedInviteCode,
                 value: offerData.value,
                 image: offerData.image,
                 name: offerData.name
@@ -160,7 +161,7 @@ function Login() {
               {
                 user_id: user?.id,
                 type: offerData.type,
-                referral_uid: storedInviteCode,
+                ref_offer_id: storedInviteCode,
                 value: offerData.value,
                 image: offerData.image,
                 name: offerData.name
