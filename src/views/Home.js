@@ -522,7 +522,7 @@ function Home() {
             </div> : <div />}
 
             <div>
-                <p style={{ fontSize: '16px', width: '100%', textAlign: 'center', lineHeight: '1.2', fontWeight: 'bold' }} >{`Hello, ${user?.full_name.split(' ')[0]}!`}
+                <p style={{ fontSize: '16px', width: '100%', textAlign: 'center', lineHeight: '1.2', fontWeight: 'bold' }} >{`Hello, ${user ? user?.full_name.split(' ')[0] : ''}!`}
                 </p>
                 <h1 style={{ fontSize: '32px', width: '100%', textAlign: 'center', lineHeight: '1.2', margin: '12px 0', fontWeight: 'bold' }} >{`Select your offer`}
                 </h1>
