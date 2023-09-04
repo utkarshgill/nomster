@@ -639,6 +639,8 @@ function Home() {
 
             <ul className='list'>{renderTransactions(transactions)}</ul>
 
+            <h4 className='label' style={{ textAlign: 'center' }}>VISIT US</h4>
+
             <div className='hero-card' >
                 <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>
 
