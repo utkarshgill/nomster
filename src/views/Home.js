@@ -328,15 +328,16 @@ function Home() {
 
                 {/* <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" /> */}
                 <div>
-                    <p className='label' >{card.type === 'invite' ? `${firstName} invited you` : card.type === 'refer' && !card.is_unlocked ? `You invited ${firstName} (Unlocks after their first order)` : card.type === 'refer' && card.is_unlocked ? `You invited ${firstName}` : ''}</p>
+                    <p className='label' >{card.type === 'invite' ? `${firstName} invited you` : card.type === 'refer' ? `You invited ${firstName}` : ''}</p>
                     <h1 style={{ textAlign: 'left' }}>{card.name}</h1>
+
                 </div>
-                <button
+                {card.is_unlocked ? <button
                     className={`secondary-button ${isCardSelected ? 'applied-state' : ''}`}
                     onClick={() => handleApply(index)}
                 >
                     {isCardSelected ? "Selected" : "Select"}
-                </button>
+                </button> : <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'wrap', maxWidth: '140px', fontWeight: 'normal' }}>Unlocks after their first order</button>}
 
             </div>
 
@@ -381,7 +382,7 @@ function Home() {
                     <div className='list-item'>
                         <div className='wallet-balance' style={{ padding: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
+                                <div style={{ backgroundColor: '#fff', borderRadius: '100px' }}>
                                     <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
                                         {type === 'spend' ? '₹' : (type === 'refer' || type === 'invite') ? '🥤' : '₹'}</p>
                                 </div>
@@ -512,24 +513,31 @@ function Home() {
 
     return (
         <div className="styled-container">
-            {deferredPrompt && <div className='navbar'>
-                <p >Install the app for a smoother experience.</p>
-                <button className='secondary-button' onClick={handleInstallClick}>Install App</button>
+            {deferredPrompt ? <div className='navbar'>
+                <p >Install app for easy access</p>
+                <button className='scanner' onClick={handleInstallClick}>Install app</button>
 
                 {/* <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} /> */}
-            </div>}
+            </div> : <div />}
 
-
+            <div>
+                <p style={{ fontSize: '16px', width: '100%', textAlign: 'center', lineHeight: '1.2', fontWeight: 'bold' }} >{`Hello, ${user?.full_name.split(' ')[0]}!`}
+                </p>
+                <h1 style={{ fontSize: '32px', width: '100%', textAlign: 'center', lineHeight: '1.2', margin: '12px 0', fontWeight: 'bold' }} >{`Select your offer`}
+                </h1>
+                <p style={{ fontSize: '16px', width: '100%', textAlign: 'center', lineHeight: '1.2' }} >{'Get +10% cashback on every bite!'}
+                </p>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '12px' }}>
 
 
 
                 {transactions.some(transaction => !transaction.is_confirmed) ?
 
-                    <div className='claim-box' >
+                    <div className='claim-box' style={{ background: '#fff', padding: '48px' }}>
 
-                        <p style={{ fontSize: '24px', width: '100%', textAlign: 'center', lineHeight: '1.2' }} >{'Waiting for confirmation...'}
-                        </p>
+                        <h3 style={{ width: '100%', textAlign: 'center', lineHeight: '1.2' }} >{'Waiting for confirmation...'}
+                        </h3>
 
                         <p  >{'Please wait :)'}
                         </p>
@@ -550,21 +558,31 @@ function Home() {
 
 
                     <div className='claim-box' >
-                        <div>
-                            <h1 style={{ fontSize: '32px', width: '100%', textAlign: 'center', lineHeight: '1.2', marginBottom: '12px', fontWeight: 'bold' }} >{'Select your offer'}
-                            </h1>
-                            <p style={{ fontSize: '16px', width: '100%', textAlign: 'center', lineHeight: '1.2' }} >{'Get +10% cashback on every bite!'}
-                            </p>
+                        <div style={{ width: '100%' }}>
+                            {user?.balance ? <BalanceCard /> : <div />}
+                            {offerCards.map(renderCard)}
+                            <div className="balance-card invite-friends" >
+                                {/* <img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /> */}
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+
+
+
+                                    <div >
+                                        <p className='label' style={{ textAlign: 'left' }}>Invite a friend & <br />get a FREE drink</p>
+
+                                    </div>   <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '0 12px 0 0' }}>
+                                        🥤</p> </div>
+                                <button
+                                    className='secondary-button'
+                                    onClick={handleShareOffer}
+                                >
+                                    Invite
+                                </button>
+
+                            </div>
                         </div>
 
-                        {user?.balance ? <BalanceCard /> : <div />}
-                        {offerCards.map(renderCard)}
-                        <div className="offer-card" onClick={handleShareOffer}>
-                            {/* <img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /> */}
 
-
-                            Invite friends and get a free drink.
-                        </div>
 
 
                         {/* <h4 style={{ textAlign: 'left', width: '100%', margin: 0 }}>YOUR REWARDS</h4> */}
@@ -590,11 +608,11 @@ function Home() {
                             <h3>Total bill</h3>
                             <h3>{`₹${number ? parseFloat(number).toFixed(2) : 0}`}</h3>
                         </div> */}
-                        {!discount ? '' : <div className='wallet-balance'><p>{`Discount`}</p><h3>-₹{Math.min(number, user.balance).toFixed(2)}</h3></div>}
-                        {!offer ? '' : <div className='wallet-balance'><p>Offer</p><h3>{`${offer.name} (worth ₹${offer.value})`}</h3></div>}
+                        {!discount ? '' : <div className='wallet-balance'><p>{`Discount`}</p><p>-₹{Math.min(number, user.balance).toFixed(2)}</p></div>}
+                        {!offer ? '' : <div className='wallet-balance'><p>Offer</p><p>{`${offer.name} (worth ₹${offer.value})`}</p></div>}
                         {number ? <div className='wallet-balance'>
                             <p>To Pay</p>
-                            <h3>₹{Math.max(number - (selectedCard == 'balance' ? user.balance : 0), 0).toFixed(2)}</h3>
+                            <p>₹{Math.max(number - (selectedCard == 'balance' ? user.balance : 0), 0).toFixed(2)}</p>
                         </div> : ''}
                         <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%', gap: '10px' }}>
                             {/* <button className='secondary-button' onClick={handleCancel}>Cancel</button> */}
@@ -617,13 +635,10 @@ function Home() {
 
 
                 }   </div>
-            <div>
 
-                <h3>History</h3>
 
-                <ul className='list'>{renderTransactions(transactions)}</ul>
+            <ul className='list'>{renderTransactions(transactions)}</ul>
 
-            </div>
             <div className='hero-card' >
                 <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>
 
@@ -633,11 +648,11 @@ function Home() {
 
                 </div>
 
-                <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px' }}>
-                    <a onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Directions</a>
-                    <a onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</a>
-                    <a onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</a>
-                    <a href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call us at 8199079413</a>
+                <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-start' }}>
+                    <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</button>
+                    <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</button>
+                    <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Find directions</button>
+                    <a className='secondary-button' href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call 8199079413</a>
 
                 </div>
 

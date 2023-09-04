@@ -236,43 +236,63 @@ function Login() {
   }, [navigate]);
 
   return (
-    <div className='styled-container' style={{ height: '100vh', justifyContent: 'center' }}>
+    <div className='styled-container' >
 
-      <div className='navbar'>
-        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />
+      <span style={{ display: 'flex', fontSize: '48px', alignItems: 'center', margin: '60px 0 0 0' }}>🥤🍕
+        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />🍔🍟 </span>
+
+      <div style={{ maxWidth: '80%' }}>
+        <h1 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '60px', lineHeight: '.85', margin: '0 0 20px 0' }}>
+          rewards on every bite!
+        </h1>
+        <p style={{ textAlign: 'center' }}>nomster is your ultimate restaurant loyalty companion: earn cashback, invite friends, and unlock exciting rewards</p>
+
       </div>
 
-      {inviterName && inviterImage ? (
-        <div className='stack-h-fill' style={{ gap: '12px' }}>
-          <img style={{ borderRadius: '100px', width: '32px' }} src={inviterImage} alt={inviterName} />
-          <span>{`${inviterName} sent you a drink`}</span>
+
+
+
+      <div style={{ width: '100%' }}>
+        <h4 className='label' style={{ textAlign: 'center' }}>SIGN IN TO UNLOCK OFFERS</h4>
+
+
+
+        <div className='balance-card' style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+          <p className='label'>on all orders</p>
+          <h1 style={{ textAlign: 'left' }}>10% cashback</h1>
+
         </div>
-      ) : ''}
-      {offerImage && inviterName ? <div style={{
-        display: 'flex',
-        alignItems: 'end',
-        justifyContent: 'center',
-        boxSizing: 'border-box',
-        padding: '80px',
-        marginBottom: '10px',
+        {inviterName && inviterImage ? (
+          <div className="offer-card" style={{ background: '#ffdd8e' }}>
 
-        position: 'relative',
-        backgroundImage: `url(${offerImage})`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        aspectRatio: '1280/1792'
-      }}>
 
-        <QRCodeCanvas fgColor='#2B1317' className='qr-code' value={inviterName} includeMargin style={{ filter: 'blur(10px)' }} />
+            {/* <img style={{ borderRadius: '100px', width: '24px' }} src={imgUrl} alt="" /> */}
+            <div>
+              <p className='label' >{`${inviterName} invited you`}</p>
+              <h1 style={{ textAlign: 'left' }}>FREEDRINK</h1>
 
-      </div> : <div />}
+            </div>
+
+          </div>
+
+        ) : ''}
+        <div className='balance-card invite-friends' style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+          <p className='label'> on all orders above ₹199</p>
+          <h1 style={{ textAlign: 'left' }}>invite a friend, grab a drink</h1>
+
+        </div>
+      </div>
+
+
       <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
+
+
       <footer className='footer'>
-        <nav>
-          <a href="/tos">Terms of Service</a>
-          <a href="https://twitter.com/nomsterindia" target="_blank" rel="noopener noreferrer">Twitter</a>
-          <a href="/privacy">Privacy Policy</a>
-        </nav>
+
+        <a href="/tos">Terms of Service</a>
+        <a href="https://twitter.com/nomsterindia" target="_blank" rel="noopener noreferrer">Twitter</a>
+        <a href="/privacy">Privacy Policy</a>
+
       </footer>
     </div >
   );

@@ -251,7 +251,7 @@ function Admin() {
     return (
 
         <div className='styled-container'>
-            <h1 style={{ textAlign: 'left', width: '100%' }}>Transactions</h1>
+            <h1 style={{ textAlign: 'center', width: '100%', marginTop: '60px' }}>Transactions</h1>
 
 
 
@@ -263,15 +263,15 @@ function Admin() {
                         {!transaction.is_confirmed ?
                             <div className='bill-box' >
                                 <div className='wallet-balance'>
-                                    <h3>Total bill</h3>
-                                    <h3>{`₹${transaction.bill_value}`}</h3>
+                                    <h1>Total bill</h1>
+                                    <h1>{`₹${transaction.bill_value}`}</h1>
                                 </div>
                                 {transaction.type == 'spend' ? <div className='wallet-balance'><p>{`Discount from balance`}</p><p>-₹{transaction.amount.toFixed(2)}</p></div> : ''}
                                 {transaction.type == 'refer' || transaction.type == 'invite' ? <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type} (worth ₹${Math.abs(transaction.amount)})`}</p></div> : ''}
 
                                 <div className='wallet-balance'>
-                                    <h1>To Pay</h1>
-                                    <h1>₹{(transaction.type == 'spend' ? (transaction.bill_value - transaction.amount) : transaction.bill_value).toFixed(2)}</h1>
+                                    <p>To Pay</p>
+                                    <p>₹{(transaction.type == 'spend' ? (transaction.bill_value - transaction.amount) : transaction.bill_value).toFixed(2)}</p>
                                 </div>
                                 <div className='wallet-balance'><p>{`Cashback`}</p><p>₹{((transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)) * .1).toFixed(2)}</p></div>
 
@@ -290,7 +290,7 @@ function Admin() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                         {usersMap[transaction.user_id] && (
                                             <>
-                                                <div style={{ backgroundColor: '#fff', borderRadius: '100px', border: '2px solid #000' }}>
+                                                <div style={{ backgroundColor: '#fff', borderRadius: '100px' }}>
                                                     <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
                                                         {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
                                                 </div> <div>
