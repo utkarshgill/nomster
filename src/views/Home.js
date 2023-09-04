@@ -332,12 +332,13 @@ function Home() {
                     <h1 style={{ textAlign: 'left' }}>{card.name}</h1>
 
                 </div>
-                {card.is_unlocked ? <button
-                    className={`secondary-button ${isCardSelected ? 'applied-state' : ''}`}
-                    onClick={() => handleApply(index)}
-                >
-                    {isCardSelected ? "Selected" : "Select"}
-                </button> : <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'normal', maxWidth: '140px', fontWeight: 'normal' }}>Unlocks after their first order</button>}
+                {number < card.value ? <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'normal', maxWidth: '140px', fontWeight: 'normal' }}>on orders above ₹149</button>
+                    : card.is_unlocked ? <button
+                        className={`secondary-button ${isCardSelected ? 'applied-state' : ''}`}
+                        onClick={() => handleApply(index)}
+                    >
+                        {isCardSelected ? "Selected" : "Select"}
+                    </button> : <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'normal', maxWidth: '140px', fontWeight: 'normal' }}>Unlocks after their first order</button>}
 
             </div>
 
@@ -355,12 +356,12 @@ function Home() {
                     <h1 style={{ textAlign: 'left' }}>{user?.balance != undefined ? `₹${user?.balance?.toFixed(2)}` : `₹${(0).toFixed(2)}`}</h1>
 
                 </div>
-                <button
+                {user?.balance ? <button
                     className={`secondary-button ${isBalanceCardSelected ? 'applied-state' : ''}`}
                     onClick={() => handleApply('balance')}
                 >
                     {isBalanceCardSelected ? "Selected" : "Select"}
-                </button>
+                </button> : <div />}
             </div>
         );
     };
@@ -559,7 +560,7 @@ function Home() {
 
                     <div className='claim-box' >
                         <div style={{ width: '100%' }}>
-                            {user?.balance ? <BalanceCard /> : <div />}
+                            {<BalanceCard />}
                             {offerCards.map(renderCard)}
                             <div className="balance-card invite-friends" >
                                 {/* <img style={{ width: '100%' }} src={'https://xxsawwpbahvabbaljjuu.supabase.co/storage/v1/object/public/images/invite_friends.png'} /> */}

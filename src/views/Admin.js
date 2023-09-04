@@ -9,12 +9,15 @@ import { Scanner } from '@codesaursx/react-scanner';
 function Admin() {
     const [transactions, setTransactions] = useState([]);
     const [usersMap, setUsersMap] = useState({});
-    const [number, setNumber] = useState(0.00);
     const navigate = useNavigate();
     const [code, setCode] = useState('&%');
     const [customer, setCustomer] = useState(null);
     const [offerName, setOfferName] = useState('');
     const [isScannerVisible, setScannerVisible] = useState(false);
+
+
+
+
 
     //bill box related state
     // const type = code.split('&')[1].split('%')[0];
@@ -129,7 +132,6 @@ function Admin() {
 
 
     function clearState() {
-        setNumber(0)
         setCode('&%')
         setCustomer(null)
         setOfferName(null)
@@ -243,6 +245,64 @@ function Admin() {
         return new Date(dateString).toLocaleString(undefined, options);
     };
 
+    function TransactionItem({ transaction, handleConfirm }) {
+
+        return (
+            <li key={transaction.id} style={{ listStyleType: 'none' }}>
+                {!transaction.is_confirmed ?
+                    <div className='bill-box' >
+                        <div className='wallet-balance'>
+                            <h1>To Pay</h1>
+                            <h1> {transaction.bill_value.toFixed(2)} </h1>
+                        </div>
+
+
+                        {transaction.type == 'spend' ? <div className='wallet-balance'><p>{`Discount from balance`}</p><p>-₹{transaction.amount.toFixed(2)}</p></div> : ''}
+                        {transaction.type == 'refer' || transaction.type == 'invite' ? <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type} (worth ₹${Math.abs(transaction.amount)})`}</p></div> : ''}
+
+                        <div className='wallet-balance'>
+                            <p>To Pay</p>
+                            <p>₹{(transaction.type == 'spend' ? (transaction.bill_value - transaction.amount) : transaction.bill_value).toFixed(2)}</p>
+                        </div>
+                        <div className='wallet-balance'><p>{`Cashback`}</p><p>₹{((transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)) * .1).toFixed(2)}</p></div>
+
+                        <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
+                            {/* <button className='secondary-button' onClick={() => handleCancel(transaction)}>Cancel</button> */}
+                            <button className='scanner' onClick={() => handleConfirm(transaction)}>Confirm</button>
+                        </div>
+                    </div>
+
+                    :
+
+
+
+                    <div className='list-item' >
+                        <div className='wallet-balance'>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                {usersMap[transaction.user_id] && (
+                                    <>
+                                        <div style={{ backgroundColor: '#fff', borderRadius: '100px' }}>
+                                            <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
+                                                {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
+                                        </div> <div>
+                                            <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name}</p>
+                                            <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value.toFixed(2)}`}</p>
+                                <p>{`(${transaction.type}) ﹣₹${transaction.amount.toFixed(2)}`}</p>
+
+                                <p>{`₹${(0.1 * (transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0))).toFixed(2)} cashback`}</p>
+                            </div>
+
+                        </div>
+                    </div>}
+            </li>
+        );
+    }
 
 
 
@@ -259,57 +319,12 @@ function Admin() {
 
             <ul className='list'>
                 {transactions.map((transaction) => (
-                    <li key={transaction.id} style={{ listStyleType: 'none' }}>
-                        {!transaction.is_confirmed ?
-                            <div className='bill-box' >
-                                <div className='wallet-balance'>
-                                    <h1>Total bill</h1>
-                                    <h1>{`₹${transaction.bill_value}`}</h1>
-                                </div>
-                                {transaction.type == 'spend' ? <div className='wallet-balance'><p>{`Discount from balance`}</p><p>-₹{transaction.amount.toFixed(2)}</p></div> : ''}
-                                {transaction.type == 'refer' || transaction.type == 'invite' ? <div className='wallet-balance'><p>Offers Applied</p><p>{`${transaction.type} (worth ₹${Math.abs(transaction.amount)})`}</p></div> : ''}
 
-                                <div className='wallet-balance'>
-                                    <p>To Pay</p>
-                                    <p>₹{(transaction.type == 'spend' ? (transaction.bill_value - transaction.amount) : transaction.bill_value).toFixed(2)}</p>
-                                </div>
-                                <div className='wallet-balance'><p>{`Cashback`}</p><p>₹{((transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)) * .1).toFixed(2)}</p></div>
 
-                                <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
-                                    {/* <button className='secondary-button' onClick={() => handleCancel(transaction)}>Cancel</button> */}
-                                    <button className='scanner' onClick={() => handleConfirm(transaction)}>Confirm</button>
-                                </div>
-                            </div>
-
-                            :
+                    <TransactionItem key={transaction.id} transaction={transaction} handleConfirm={handleConfirm} />
 
 
 
-                            <div className='list-item' >
-                                <div className='wallet-balance'>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                        {usersMap[transaction.user_id] && (
-                                            <>
-                                                <div style={{ backgroundColor: '#fff', borderRadius: '100px' }}>
-                                                    <p style={{ fontSize: '32px', textAlign: 'center', height: '40px', width: '40px', borderRadius: '100px', padding: '2px' }}>
-                                                        {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
-                                                </div> <div>
-                                                    <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name}</p>
-                                                    <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value.toFixed(2)}`}</p>
-                                        <p>{`(${transaction.type}) ﹣₹${transaction.amount.toFixed(2)}`}</p>
-
-                                        <p>{`₹${(0.1 * (transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0))).toFixed(2)} cashback`}</p>
-                                    </div>
-
-                                </div>
-                            </div>}
-                    </li>
                 ))}
             </ul>
         </div>

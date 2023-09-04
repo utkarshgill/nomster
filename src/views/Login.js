@@ -20,6 +20,8 @@ function Login() {
   const [inviterImage, setInviterImage] = useState(null);
   const { setStatus } = useStatus();
 
+  const { offer: offerSVG, nomster: nomsterSVG, tcwLogo } = svgData;
+
   useEffect(() => {
     (async () => {
       if (inviteCode) {
@@ -235,6 +237,11 @@ function Login() {
     };
   }, [navigate]);
 
+  const handleClick = (url) => {
+    window.open(url, '_blank');
+  }
+
+
   return (
     <div className='styled-container' >
 
@@ -242,7 +249,7 @@ function Login() {
         <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />🍔🍟 </span>
 
       <div style={{ maxWidth: '80%' }}>
-        <h1 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '60px', lineHeight: '.85', margin: '0 0 20px 0' }}>
+        <h1 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '48px', lineHeight: '.85', margin: '0 0 20px 0' }}>
           rewards on every bite!
         </h1>
         <p style={{ textAlign: 'center' }}>nomster is your ultimate restaurant loyalty companion: earn cashback, invite friends, and unlock exciting rewards</p>
@@ -278,7 +285,7 @@ function Login() {
 
         ) : ''}
         <div className='balance-card invite-friends' style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-          <p className='label'> on all orders above ₹199</p>
+          <p className='label'> on all orders above ₹149</p>
           <h1 style={{ textAlign: 'left' }}>invite a friend, grab a drink</h1>
 
         </div>
@@ -296,6 +303,29 @@ function Login() {
         </div><div className='balance-card invite-friends' style={{ flexDirection: 'column', gap: '12px', background: '#ffdd8e' }}>
           <h2 style={{ textAlign: 'left', width: '100%' }}><span style={{ fontWeight: 'normal' }}>Step 3</span><br />Instantly Claim Your Cashback</h2>
           <p>With the offer selected, tap to claim and enjoy instant cashback. Savings made simple, every time you dine.</p>
+        </div>
+      </div>
+      <div style={{ width: '100%' }}>
+        <h4 className='label' style={{ textAlign: 'center' }}>Visit us</h4>
+
+        <div className='hero-card' >
+          <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>
+
+            <h2 >{'The Country Wok, Vadodara'}
+            </h2>
+            <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
+
+          </div>
+
+          <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-start' }}>
+            <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</button>
+            <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</button>
+            <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Find directions</button>
+            <a className='secondary-button' href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call 8199079413</a>
+
+          </div>
+
+
         </div>
       </div>
       <footer className='footer'>
