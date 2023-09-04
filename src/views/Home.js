@@ -638,29 +638,29 @@ function Home() {
 
 
             <ul className='list'>{renderTransactions(transactions)}</ul>
+            <div style={{ width: '100%' }}>
+                <h4 className='label' style={{ textAlign: 'center' }}>VISIT US</h4>
 
-            <h4 className='label' style={{ textAlign: 'center' }}>VISIT US</h4>
+                <div className='hero-card' >
+                    <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>
 
-            <div className='hero-card' >
-                <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>
+                        <h2 >{'The Country Wok, Vadodara'}
+                        </h2>
+                        <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
 
-                    <h2 >{'The Country Wok, Vadodara'}
-                    </h2>
-                    <div dangerouslySetInnerHTML={{ __html: tcwLogo }} />
+                    </div>
+
+                    <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-start' }}>
+                        <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</button>
+                        <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</button>
+                        <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Find directions</button>
+                        <a className='secondary-button' href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call 8199079413</a>
+
+                    </div>
+
 
                 </div>
-
-                <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-start' }}>
-                    <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</button>
-                    <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</button>
-                    <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Find directions</button>
-                    <a className='secondary-button' href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call 8199079413</a>
-
-                </div>
-
-
             </div>
-
             <button className='secondary-button' onClick={handleSignOut}>Sign out</button>
 
             <footer className='footer'>
