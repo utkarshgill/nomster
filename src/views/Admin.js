@@ -138,8 +138,9 @@ function Admin() {
     }
 
     async function handleCancel(transaction) {
+        await supabase.from('transactions').delete().eq('id', transaction.id);
         clearState()
-        await supabase.from('transactions').update({ status: 'rejected' }).eq('id', transaction.id);
+        fetchTransactions();
     }
     const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
@@ -266,9 +267,9 @@ function Admin() {
                         </div>
                         <div className='wallet-balance'><p>{`Cashback`}</p><p>₹{((transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)) * .1).toFixed(2)}</p></div>
 
-                        <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%' }}>
-                            {/* <button className='secondary-button' onClick={() => handleCancel(transaction)}>Cancel</button> */}
-                            <button className='scanner' onClick={() => handleConfirm(transaction)}>Confirm</button>
+                        <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%', gap: '20px' }}>
+                            <button className='secondary-button' onClick={() => handleCancel(transaction)}>Reject</button>
+                            <button className='scanner' onClick={() => handleConfirm(transaction)}>Approve</button>
                         </div>
                     </div>
 

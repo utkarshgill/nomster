@@ -60,6 +60,8 @@ function Home() {
 
     const { status } = useStatus();
 
+    const [isLoading, setIsLoading] = useState(false);
+
     useEffect(() => {
         if (status === 'completed') {
             fetchOfferCards(user.user_id);
@@ -142,6 +144,8 @@ function Home() {
 
 
     const handleSignOut = async () => {
+
+        mixpanel.track('tap sign out');
         await supabase.auth.signOut();
         navigate('/');
         setUser(null);
@@ -291,6 +295,7 @@ function Home() {
             setSelectedCard(null);
             setDiscount(0);
             setOffer(null);
+            mixpanel.track('deselect offer');
 
         } else {
             setSelectedCard(indexOrType);
@@ -298,10 +303,14 @@ function Home() {
                 setDiscount(user.balance);
                 setOffer(null);
 
+                mixpanel.track('select cash discount', { type: 'balance', balance: user.balance });
             }
             else {
                 setOffer(offerCards[indexOrType]);
                 setDiscount(0);
+
+
+                mixpanel.track('select offer', { type: offerCards[indexOrType].type });
 
             }
             // calculateFinalBill(indexOrType);
@@ -423,19 +432,27 @@ function Home() {
 
 
 
-    const handleClick = (url) => {
+    const handleClick = (url, channel) => {
         window.open(url, '_blank');
+
+        mixpanel.track('tap link', { url: url, channel: channel });
     }
 
     const handleConfirm = async () => {
+
+
+        setIsLoading(true);
+
         if (!user) {
             console.error('User is null');
-            return;
+            return (setIsLoading(false));
         }
         if (number <= 0) {
             console.error('Bill value is zero or negative. Operation not allowed.');
-            return;
+
+            return (setIsLoading(false));
         }
+
 
 
         const transaction = {
@@ -478,6 +495,7 @@ function Home() {
 
         }
 
+        mixpanel.track('claim rewards', { transaction: transaction });
 
         await supabase.from('transactions').insert(transaction);
 
@@ -487,6 +505,8 @@ function Home() {
 
         clearState();
         fetchTransactions(user.user_id);
+
+        return (setIsLoading(false));
     };
 
 
@@ -599,8 +619,13 @@ function Home() {
                                 type="number"
                                 value={number ? number : ''}
                                 onChange={handleInputChange}
-                                onFocus={() => setIsFocused(true)}
-                                onBlur={() => { if (!number) setIsFocused(false); }}
+                                onFocus={() => (setIsFocused(true),
+                                    mixpanel.track('tap bill input', { bill: number }))}
+                                onBlur={() => {
+                                    if (!number) setIsFocused(false);
+
+                                    mixpanel.track('tap out bill input', { bill: number });
+                                }}
                             />
                         </div>
 
@@ -618,13 +643,13 @@ function Home() {
                         <div className='stack-h-fill' style={{ justifyContent: 'space-between', width: '100%', gap: '10px' }}>
                             {/* <button className='secondary-button' onClick={handleCancel}>Cancel</button> */}
 
-                            <button className='scanner' disabled={!number} onClick={handleConfirm}>
+                            {isLoading ? '' : <button className='scanner' disabled={!number} onClick={handleConfirm}>
                                 {parseFloat((0.1 * (Math.max(number - (selectedCard == 'balance' ? user.balance : 0), 0))).toFixed(2))
                                     ? <>
                                         Claim ₹{(0.1 * (Math.max(number - (selectedCard == 'balance' ? user.balance : 0), 0))).toFixed(2)} cashback
                                     </>
                                     : 'Claim rewards'}
-                            </button>
+                            </button>}
                         </div>
 
 
@@ -652,9 +677,9 @@ function Home() {
                     </div>
 
                     <div className='stack-h-fill' style={{ flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-start' }}>
-                        <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9')}>Zomato</button>
-                        <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656')}>Swiggy</button>
-                        <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979')}>Find directions</button>
+                        <button className='secondary-button' onClick={() => handleClick('https://link.zomato.com/xqzv/rshare?id=318626019a7b92f9', 'zomato')}>Zomato</button>
+                        <button className='secondary-button' onClick={() => handleClick('https://www.swiggy.com/menu/460656', 'swiggy')}>Swiggy</button>
+                        <button className='secondary-button' onClick={() => handleClick('https://goo.gl/maps/ssxsgRkP3Q8EES979', 'map')}>Find directions</button>
                         <a className='secondary-button' href={`tel:${'+918199079413'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Call 8199079413</a>
 
                     </div>
