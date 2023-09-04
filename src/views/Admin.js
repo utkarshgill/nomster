@@ -139,9 +139,9 @@ function Admin() {
         clearState()
         await supabase.from('transactions').update({ status: 'rejected' }).eq('id', transaction.id);
     }
-    // const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
+    const specificUserId = '5bc347c2-3490-40e7-84c2-f941df26157e';
 
-    const specificUserId = 'b41a7008-c0fd-419a-96e7-e9e0e8efb5c5';
+    // const specificUserId = 'b41a7008-c0fd-419a-96e7-e9e0e8efb5c5';
 
     useEffect(() => {
         checkUser();

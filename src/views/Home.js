@@ -337,7 +337,7 @@ function Home() {
                     onClick={() => handleApply(index)}
                 >
                     {isCardSelected ? "Selected" : "Select"}
-                </button> : <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'wrap', maxWidth: '140px', fontWeight: 'normal' }}>Unlocks after their first order</button>}
+                </button> : <button disabled className='secondary-button' style={{ fontSize: '12px', whiteSpace: 'normal', maxWidth: '140px', fontWeight: 'normal' }}>Unlocks after their first order</button>}
 
             </div>
 
@@ -639,7 +639,7 @@ function Home() {
 
             <ul className='list'>{renderTransactions(transactions)}</ul>
             <div style={{ width: '100%' }}>
-                <h4 className='label' style={{ textAlign: 'center' }}>VISIT US</h4>
+                <h4 className='label' style={{ textAlign: 'center' }}>Visit us</h4>
 
                 <div className='hero-card' >
                     <div className='wallet-balance' style={{ alignItems: 'center', justifyContent: 'space-between', gap: '20px', padding: 0 }}>

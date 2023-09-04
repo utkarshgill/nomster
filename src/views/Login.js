@@ -249,11 +249,12 @@ function Login() {
 
       </div>
 
+      <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
 
 
 
       <div style={{ width: '100%' }}>
-        <h4 className='label' style={{ textAlign: 'center' }}>SIGN IN TO UNLOCK OFFERS</h4>
+        <h4 className='label' style={{ textAlign: 'center' }}>Sign in to unlock offers</h4>
 
 
 
@@ -282,11 +283,21 @@ function Login() {
 
         </div>
       </div>
+      <div style={{ width: '100%' }}>
+        <h4 className='label' style={{ textAlign: 'center' }}>How it works</h4>
 
+        <div className='balance-card' style={{ flexDirection: 'column', gap: '12px' }}>
+          <h2 style={{ textAlign: 'left', width: '100%' }}><span style={{ fontWeight: 'normal' }}>Step 1</span><br />Dine at Your Favorite Restaurant</h2>
+          <p>Visit any restaurant of your choice and enjoy your meal. Whether it's a brunch, lunch, or dinner, savor every moment.</p>
+        </div><div className='offer-card' style={{ flexDirection: 'column', gap: '12px' }}>
+          <h2 style={{ textAlign: 'left', width: '100%' }}><span style={{ fontWeight: 'normal' }}>Step 2</span><br />Enter the Bill & Select an Offer</h2>
+          <p>After finishing, open the Nomster app. Input the total bill amount and explore our curated list of exclusive offers. Select the one that appeals to you the most.</p>
 
-      <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
-
-
+        </div><div className='balance-card invite-friends' style={{ flexDirection: 'column', gap: '12px', background: '#ffdd8e' }}>
+          <h2 style={{ textAlign: 'left', width: '100%' }}><span style={{ fontWeight: 'normal' }}>Step 3</span><br />Instantly Claim Your Cashback</h2>
+          <p>With the offer selected, tap to claim and enjoy instant cashback. Savings made simple, every time you dine.</p>
+        </div>
+      </div>
       <footer className='footer'>
 
         <a href="/tos">Terms of Service</a>
