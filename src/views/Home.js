@@ -26,12 +26,16 @@ function Home() {
     }, []);
 
     const handleInstallClick = () => {
+        mixpanel.track('tap install app');
         if (deferredPrompt) {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === 'accepted') {
+                    mixpanel.track('accept install prompt');
                     console.log('User accepted the A2HS prompt');
                 } else {
+
+                    mixpanel.track('dismiss install prompt');
                     console.log('User dismissed the A2HS prompt');
                 }
                 setDeferredPrompt(null);
