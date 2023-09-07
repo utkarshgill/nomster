@@ -253,7 +253,7 @@ function Admin() {
                 {!transaction.is_confirmed ?
                     <div className='bill-box' >
                         <div className='wallet-balance'>
-                            <h1>To Pay</h1>
+                            <h1>Total bill</h1>
                             <h1> {transaction.bill_value.toFixed(2)} </h1>
                         </div>
 
@@ -287,16 +287,17 @@ function Admin() {
                                                 {transaction.type == 'earn' ? '₹' : transaction.type == 'refer' || transaction.type == 'invite' ? '🥤' : '₹'}</p>
                                         </div> <div>
                                             <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{usersMap[transaction.user_id].full_name}</p>
+                                            <p>{`₹${(0.1 * (transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0))).toFixed(2)} cashback`}</p>
                                             <p style={{ color: 'gray' }}>{formatDate(transaction.created_at)}</p>
                                         </div>
                                     </>
                                 )}
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`+ ₹${transaction.bill_value.toFixed(2)}`}</p>
+                                <p style={{ fontWeight: 'normal', marginBottom: '4px' }}>{`₹${transaction.bill_value.toFixed(2)}`}</p>
                                 <p>{`(${transaction.type}) ﹣₹${transaction.amount.toFixed(2)}`}</p>
 
-                                <p>{`₹${(0.1 * (transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0))).toFixed(2)} cashback`}</p>
+                                <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>{`₹${(transaction.bill_value - (transaction.type == 'spend' ? transaction.amount : 0)).toFixed(2)}`}</p>
                             </div>
 
                         </div>

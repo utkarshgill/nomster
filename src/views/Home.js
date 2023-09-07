@@ -52,7 +52,6 @@ function Home() {
     //bill box related state
 
 
-    const [billAmount, setBillAmount] = useState(0);
     const [discount, setDiscount] = useState(0);
 
 

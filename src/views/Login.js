@@ -246,7 +246,7 @@ function Login() {
     <div className='styled-container' >
 
       <span style={{ display: 'flex', fontSize: '48px', alignItems: 'center', margin: '60px 0 0 0' }}>🥤🍕
-        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />🍔🍟 </span>
+        <div dangerouslySetInnerHTML={{ __html: svgData.nomster }} />🍔🍟</span>
 
       <div style={{ maxWidth: '80%' }}>
         <h1 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '48px', lineHeight: '.85', margin: '0 0 20px 0' }}>
@@ -256,7 +256,10 @@ function Login() {
 
       </div>
 
-      <button className='scanner' onClick={handleGoogleSignIn}>Continue with Google</button>
+      <button className='secondary-button' style={{ background: '#fff', border: '1px solid #eee', display: 'flex', alignItems: 'center', padding: '0 14px 0 0' }} onClick={handleGoogleSignIn}>
+        <div style={{ height: '46px', aspectRatio: 1 }} dangerouslySetInnerHTML={{ __html: svgData.googleLogo }} />
+
+        <span style={{ fontWeight: '500' }}>Continue with Google</span></button>
 
 
 
