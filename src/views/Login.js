@@ -259,7 +259,7 @@ function Login() {
       <button className='secondary-button' style={{ background: '#fff', border: '1px solid #eee', display: 'flex', alignItems: 'center', padding: '0 14px 0 0' }} onClick={handleGoogleSignIn}>
         <div style={{ height: '46px', aspectRatio: 1 }} dangerouslySetInnerHTML={{ __html: svgData.googleLogo }} />
 
-        <span style={{ fontWeight: '500' }}>Continue with Google</span></button>
+        <span style={{ fontWeight: '500' }}>Sign in with Google</span></button>
 
 
 
