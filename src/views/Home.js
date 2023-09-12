@@ -582,6 +582,24 @@ function Home() {
 
 
                     <div className='claim-box' >
+                        <div className="input-wrapper">
+                            <label htmlFor="billAmount" className={isFocused ? "active" : ""}>Enter bill amount</label>
+                            <input
+                                id="billAmount"
+                                className='bill-input'
+                                placeholder={isFocused ? '₹0.00' : ''}
+                                type="number"
+                                value={number ? number : ''}
+                                onChange={handleInputChange}
+                                onFocus={() => (setIsFocused(true),
+                                    mixpanel.track('tap bill input', { bill: number }))}
+                                onBlur={() => {
+                                    if (!number) setIsFocused(false);
+
+                                    mixpanel.track('tap out bill input', { bill: number });
+                                }}
+                            />
+                        </div>
                         <div style={{ width: '100%' }}>
                             {<BalanceCard />}
                             {offerCards.map(renderCard)}
@@ -613,24 +631,7 @@ function Home() {
 
 
 
-                        <div className="input-wrapper">
-                            <label htmlFor="billAmount" className={isFocused ? "active" : ""}>Enter bill amount</label>
-                            <input
-                                id="billAmount"
-                                className='bill-input'
-                                placeholder={isFocused ? '₹0.00' : ''}
-                                type="number"
-                                value={number ? number : ''}
-                                onChange={handleInputChange}
-                                onFocus={() => (setIsFocused(true),
-                                    mixpanel.track('tap bill input', { bill: number }))}
-                                onBlur={() => {
-                                    if (!number) setIsFocused(false);
 
-                                    mixpanel.track('tap out bill input', { bill: number });
-                                }}
-                            />
-                        </div>
 
 
                         {/* <div className='wallet-balance'>
